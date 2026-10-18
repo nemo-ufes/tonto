@@ -2583,7 +2583,20 @@ function isEffectivelyImmutableEnd(relation: Relation, side: 'source' | 'target'
     }
     if (side === 'target' && (['characterization', 'mediation', 'externalDependence', 'historicalDependence', 'creation']
         .includes(relation.stereotype ?? ''))) return true;
+    // A completed event and its historical links cannot be undone. Both
+    // navigations therefore accumulate links, even when the
+    // model does not spell out addOnly on either end. A plain association to
+    // an event makes no such claim, and a process may still be unfolding.
+    const historicalEventLink = ['historicalDependence', 'participation', 'creation', 'change', 'termination', 'manifestation']
+        .includes(relation.stereotype ?? '')
+        && !!relation.target?.ref && isClassDeclaration(relation.target.ref)
+        && classifiesOnly(relation.target.ref, 'events');
+    if (historicalEventLink) return true;
     const owner = side === 'target' ? getRelationSource(relation) : relation.target?.ref;
+    // An immutable event can still acquire and lose an ordinary association
+    // to a changing endurant, such as who admires a past concert.
+    if (!relation.stereotype && owner && isClassDeclaration(owner)
+        && classifiesOnly(owner, 'events')) return false;
     if (owner && isClassDeclaration(owner) && hasImmutableInstances(owner)
         && !isSituationParthood(relation) && !holdsAccumulatingHistory(relation, side)) return true;
     if (relation.stereotype === 'historicalDependence' && side === 'source') return true;

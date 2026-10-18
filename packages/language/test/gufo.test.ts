@@ -135,6 +135,20 @@ describe('the gUFO mapping', () => {
             expect(iris(after.turtle)).toEqual(['p:Person.name', 'p:Product.name']);
         });
 
+        test('relations with one name on different sources export identically in either syntax', async () => {
+            const classes = 'package p\nkind Organization\n';
+            const internal = await exportModel(classes
+                + 'kind Person { -- worksFor -- Organization }\n'
+                + 'kind Company { -- worksFor -- Organization }\n');
+            const external = await exportModel(classes
+                + 'kind Person\nkind Company\n'
+                + 'relation Person -- worksFor -- Organization\n'
+                + 'relation Company -- worksFor -- Organization\n');
+            expect(iris(internal.turtle)).toEqual(['p:Company.worksFor', 'p:Person.worksFor']);
+            expect(iris(external.turtle)).toEqual(iris(internal.turtle));
+            expect(external.diagnostics.filter(entry => entry.severity === 'error')).toEqual([]);
+        });
+
         test('enumeration literals and a relation named like a class are structural too', async () => {
             const result = await exportModel(
                 'package p\nenum Color { red, green }\nenum WineColor { red, white }\nkind Rack { [*] -- Color -- [*] WineColor }\n');
@@ -649,6 +663,55 @@ describe('the gUFO mapping', () => {
         });
     });
 
+    test('keeps historical event bounds without a written changeability marker', async () => {
+        const result = await exportModel(`
+            package p
+            kind Person
+            event Death
+            event Graduation
+            event Exam
+            @termination relation Person [1] -- diedIn -- [0..1] Death
+            @participation relation Person (const) [1..*] -- graduatedIn -- [1] Graduation
+            @participation relation Person (const) [1..*] -- tookExam -- [0..2] Exam
+        `);
+        expect(result.diagnostics.filter(entry => entry.severity === 'error')).toEqual([]);
+        expect(result.diagnostics.map(entry => entry.code)).not.toContain('gufo-upper-bound-not-expressible');
+        const turtle = flat(result.turtle);
+        expect(turtle).toContain('p:Person.diedIn a owl:ObjectProperty, owl:FunctionalProperty, owl:InverseFunctionalProperty');
+        expect(turtle).toContain('owl:onProperty p:Person.diedIn ; owl:onClass p:Death ; owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger');
+        expect(turtle).toContain('owl:onProperty p:Person.graduatedIn ; owl:onClass p:Graduation ; owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger');
+        expect(turtle).toContain('owl:onProperty p:Person.tookExam ; owl:onClass p:Exam ; owl:maxQualifiedCardinality "2"^^xsd:nonNegativeInteger');
+    });
+
+    test('an explicit addOnly event end exports identically to an implicit one', async () => {
+        const source = (modifier: string) => `
+            package p
+            kind Person
+            event Death
+            @termination relation Person (const) [1] -- diedIn -- [0..1] ${modifier} Death
+        `;
+        const implicit = await exportModel(source(''));
+        const explicit = await exportModel(source('(addOnly)'));
+        expect(implicit.turtle).toBe(explicit.turtle);
+    });
+
+    test('a plain event association and a lapsed source class keep their upper bounds out of the lifetime export', async () => {
+        const result = await exportModel(`
+            package p
+            kind Person
+            role Student specializes Person
+            event Concert
+            event Graduation
+            relation Person [1] -- admires -- [0..1] Concert
+            @participation relation Student (const) [1..*] -- graduatedIn -- [0..1] Graduation
+        `);
+        const turtle = flat(result.turtle);
+        expect(turtle).not.toContain('p:Person.admires a owl:ObjectProperty, owl:FunctionalProperty');
+        expect(turtle).not.toContain('p:Person.admires a owl:ObjectProperty, owl:InverseFunctionalProperty');
+        expect(turtle).not.toContain('p:Student.graduatedIn a owl:ObjectProperty, owl:FunctionalProperty');
+        expect(result.diagnostics.map(entry => entry.code)).toContain('gufo-upper-bound-not-expressible');
+    });
+
     test('writes what a derived relation is derived from (section 9.2)', async () => {
         const result = await exportModel(`
             package p
@@ -976,7 +1039,7 @@ describe('the gUFO mapping', () => {
                 @participation (const) [0..*] -- attended -- [0..*] Graduation
             }`);
             const line = conditionsOf(result.turtle, 'p:FormerStudent');
-            expect(line.match(/owl:someValuesFrom/g)).toHaveLength(1);
+            expect(line.match(/owl:qualifiedCardinality/g)).toHaveLength(1);
             expect(line).not.toContain('owl:unionOf');
         });
 

@@ -117,6 +117,31 @@ describe('duplicate member names', () => {
         `, /Duplicate attribute name "name"/);
     });
 
+    test('scopes relation names to their source, regardless of where they are written', async () => {
+        const classes = 'ontology example\nkind Person\nkind Company\nkind Organization\nkind Project\n';
+        await expectNoErrors(classes
+            + 'relation Person -- worksFor -- Organization\n'
+            + 'relation Company -- worksFor -- Organization');
+        await expectNoErrors(classes
+            + 'relation Person -- worksFor -- Organization\n'
+            + 'relation Company -- worksFor -- Organization\n'
+            + 'relation Organization -- employs -- Person inverseOf Person.worksFor');
+        await expectError(classes
+            + 'relation Person -- worksFor -- Organization\n'
+            + 'relation Company -- worksFor -- Organization\n'
+            + 'relation Organization -- employs -- Person inverseOf worksFor',
+            /Could not resolve reference.*worksFor/);
+        await expectNoErrors(classes
+            + 'kind Team { -- worksFor -- Organization }\n'
+            + 'relation Person -- worksFor -- Organization');
+        await expectError(classes
+            + 'relation Person -- worksFor -- Organization\n'
+            + 'relation Person -- worksFor -- Project', /Duplicate relation name "worksFor" in "Person"/);
+        await expectError('ontology example\nkind Person { -- worksFor -- Organization }\n'
+            + 'kind Organization\nkind Project\nrelation Person -- worksFor -- Project',
+            /Duplicate relation name "worksFor" in "Person"/);
+    });
+
     test('rejects an attribute colliding with a relation name', async () => {
         await expectError(`
             package p
@@ -164,6 +189,24 @@ describe('duplicate member names', () => {
             kind Company
             relation Person (party) [1] -- signs -- [1] (party) Company
         `);
+    });
+});
+
+describe('a relation to a value type', () => {
+    const code = 'value-relation-may-be-attribute';
+
+    test('hints for an enumeration or datatype target in either relation form', async () => {
+        await expectHintCode('package p\nenum Color { red, green }\nkind Apple { -- hasColor -- Color }', code);
+        await expectHintCode('package p\ndatatype Code\nkind Product\nrelation Product -- hasCode -- Code', code);
+        const { diagnostics } = await validate('package p\nenum Color { red, green }\nkind Apple { -- hasColor -- Color }');
+        expect(diagnostics.find(d => d.code === code)?.message).toContain('"propertyName: Color"');
+    });
+
+    test('does not hint for an attribute or a relation whose source is a datatype', async () => {
+        const { diagnostics } = await validate('package p\nenum Color { red, green }\ndatatype Code\nkind Orchard\n'
+            + 'kind Apple { color: Color\n -- relatedTo -- Code }\n'
+            + 'relation Code -- describes -- Color\nrelation Apple -- growsIn -- Orchard');
+        expect(diagnostics.filter(d => d.code === code)).toHaveLength(1);
     });
 });
 
@@ -1269,6 +1312,35 @@ describe('historical roles are derived from what happened', () => {
     const codes = async (source: string): Promise<string[]> =>
         (await validate(source)).diagnostics.map(d => String(d.code));
 
+    test('warns when a past-event link starts at a type whose membership can lapse', async () => {
+        await expectWarning(model('historicalRole Graduate specializes Person derivedFrom Student.graduatedIn'),
+            /Membership in "Student" can lapse, but the link to a past "Graduation" event remains/);
+        expect(await codes(model('historicalRole Graduate specializes Person derivedFrom Student.graduatedIn')))
+            .toContain('historical-event-source-can-lapse');
+        expect(await codes('package p\nkind Person\nphase Child specializes Person\nevent Birthday\n'
+            + '@participation relation Child (const) [1] -- celebrated -- [0..*] (addOnly) Birthday'))
+            .toContain('historical-event-source-can-lapse');
+    });
+
+    test.each(['creation', 'termination', 'change'])('also catches @%s into a completed event', async stereotype => {
+        const source = `package p\nkind Person\nrole Employee specializes Person\nevent Retirement\n`
+            + `@${stereotype} relation Employee (const) [1] -- retiredIn -- [0..*] (addOnly) Retirement`;
+        expect(await codes(source)).toContain('historical-event-source-can-lapse');
+    });
+
+    test('does not warn for a rigid source or a process that may still unfold', async () => {
+        expect(await codes('package p\nkind Person\nevent Graduation\n'
+            + '@participation relation Person (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation'))
+            .not.toContain('historical-event-source-can-lapse');
+        expect(await codes('package p\nkind Person\nrole Student specializes Person\nprocess Studying\n'
+            + '@participation relation Student [1..*] -- studiesIn -- [0..*] Studying'))
+            .not.toContain('historical-event-source-can-lapse');
+        expect(await codes('package p\nkind Person\nevent Graduation\n'
+            + 'historicalRole Alumnus specializes Person {\n'
+            + '    @participation (const) [1] -- graduatedIn -- [0..*] (addOnly) Graduation\n}'))
+            .not.toContain('historical-event-source-can-lapse');
+    });
+
     test('a derivation from the participation written on the student founds a graduate', async () => {
         const found = await codes(model('historicalRole Graduate specializes Person derivedFrom Student.graduatedIn'));
         expect(found).not.toContain('historical-role-without-event');
@@ -1282,7 +1354,7 @@ describe('historical roles are derived from what happened', () => {
     test('and an event type narrower than the relation\'s is read for that type', async () => {
         // Born in Brazil: a creation written into Birth, read for the births in Brazil.
         const found = await codes(model('historicalRole BornInBrazil specializes Person derivedFrom BirthInBrazil'));
-        expect(found.filter(code => code.startsWith('historical'))).toEqual([]);
+        expect(found.filter(code => code.startsWith('historical-derivation'))).toEqual([]);
     });
 
     test('a creation or a termination of its own founds one, as a participation does', async () => {
@@ -2041,7 +2113,7 @@ describe('UFO 2021: dependence and mereology axioms', () => {
                 `package p
 event Death
 kind Person {
-@termination (const) [0..1] -- [0..1] (addOnly) Death
+@termination (const) [1] -- [0..1] (addOnly) Death
 }`,
                 /re-pointed/);
         });
@@ -3648,7 +3720,7 @@ describe('a process is an occurrent that can change', () => {
         // a process and the event constituting it share no part at all.
         await expectNoErrors('package p\nprocess Flight\nprocess Crossing\nrelation Flight [1] <>-- [2..*] Crossing');
         await expectError('package p\nprocess Baking\nevent Fold\nrelation Baking [1] <>-- [1..*] Fold',
-            /Parthood does not cross natures/);
+            /Parthood does not admit/);
     });
 
     test('and it depends on the history of endurants', async () => {
@@ -3703,6 +3775,27 @@ describe('the parthood table reads in writing order', () => {
 });
 
 describe('the diamond makes a relation parthood, stereotype or not', () => {
+    test('a relator may have extrinsic modes as parts, in either writing direction', async () => {
+        const foundation = `ontology employment
+kind Person
+kind Organization
+relator Employment {
+    @mediation [0..*] -- [1] (const) Person
+    @mediation [0..*] -- [1] (const) Organization
+}
+extrinsicMode RightToSalary {
+    @characterization [0..*] -- [1] (const) Person
+    @externalDependence [0..*] -- [1] (const) Organization
+}
+`;
+        await expectNoErrors(foundation + 'relation Employment [1] <>-- [0..*] RightToSalary');
+        await expectNoErrors(foundation + 'relation RightToSalary [0..*] --<> [1] Employment');
+        await expectError(foundation + 'relation RightToSalary [1] <>-- [0..*] Employment',
+            /Parthood does not admit/);
+        await expectError(foundation + '@componenthood relation Employment <>-- RightToSalary',
+            /"@componenthood" cannot relate/);
+    });
+
     test('an unstereotyped aggregation that never bottoms out is reported', async () => {
         await expectError('package p\nkind System { [0..1] <>-- [1..*] System }', /never bottom out/);
         await expectError('package p\nkind System { [1..*] --<> [0..1] System }', /never bottom out/);

@@ -1,7 +1,7 @@
 {
     "name": "tonto-vscode",
     "displayName": "tonto",
-    "version": "0.1.62+20261017202133",
+    "version": "0.1.63+20261018212914",
     "private": true,
     "description": "tonto (OntoUML/UFO textual DSL) language support and gUFO/OWL export.",
     "license": "MIT",
@@ -121,6 +121,17 @@
                         "completionEvents": [
                             "onCommand:tonto.newOntology",
                             "onCommand:workbench.action.files.openFolder"
+                        ]
+                    },
+                    {
+                        "id": "tonto.getStarted.git",
+                        "title": "Keep model changes in Git",
+                        "description": "Recommended for ongoing work: use a Git repository to review and recover model changes. In Source Control, open the existing repository or choose **Initialize Repository** for a new folder. A remote is optional.\n[Open Source Control](command:workbench.view.scm)",
+                        "media": {
+                            "markdown": "media/walkthrough/git.md"
+                        },
+                        "completionEvents": [
+                            "onCommand:workbench.view.scm"
                         ]
                     },
                     {

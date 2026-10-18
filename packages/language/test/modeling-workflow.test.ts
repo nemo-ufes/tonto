@@ -11,8 +11,8 @@ relator Enrollment {
     @mediation [0..*] -- [1] (const) University
 }
 event Graduation
-@participation relation Student (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
-historicalRole Graduate specializes Person derivedFrom Student.graduatedIn
+@participation relation Person (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
+historicalRole Graduate specializes Person derivedFrom Person.graduatedIn
 @material relation Student [0..*] -- attends -- [1..*] University derivedFrom Enrollment
 `;
 
@@ -36,12 +36,12 @@ describe('a model across roles, relators, events and derived relations', () => {
 
     test('a graduate needs the participation that made them one', async () => {
         const session = new TontoSession();
-        const unfinished = campus.replace(' derivedFrom Student.graduatedIn', '');
+        const unfinished = campus.replace(' derivedFrom Person.graduatedIn', '');
         const reports = await session.validateText(unfinished);
         expect(reports.map(d => d.code)).toEqual(['historical-role-without-event']);
-        expect(reports[0].fixes.map(fix => fix.title)).toContain('Derive from "Student.graduatedIn"');
-        const applied = await session.applyFix(unfinished, 'historical-role-without-event', 'Derive from "Student.graduatedIn"');
-        expect(applied.text).toContain('historicalRole Graduate specializes Person derivedFrom Student.graduatedIn');
+        expect(reports[0].fixes.map(fix => fix.title)).toContain('Derive from "Person.graduatedIn"');
+        const applied = await session.applyFix(unfinished, 'historical-role-without-event', 'Derive from "Person.graduatedIn"');
+        expect(applied.text).toContain('historicalRole Graduate specializes Person derivedFrom Person.graduatedIn');
         expect(await session.validateText(applied.text)).toEqual([]);
     });
 });

@@ -11,6 +11,7 @@ import { cannotShareInstances } from '../utils/disjointness.js';
 import { formatBounds, getBounds } from './cardinality-checks.js';
 import type { ReverseLookup } from './incoming-relations.js';
 import { IMMUTABLE_NATURES } from './natures.js';
+import { isAntiRigid, isSemiRigid } from './stereotype-model.js';
 import {
     naturesFor, PART_WHOLE_STEREOTYPES, PARTHOOD_NATURE_PAIRS, signatureOf, TABLE_NATURE_NAMES
 } from './relation-nature-table.js';
@@ -379,16 +380,15 @@ export function checkRelationStereotypeNatures(relation: Relation, accept: Valid
 }
 
 /**
- * Parthood does not cross ontological natures.
+ * Parthood admits only its defined pairs of ontological natures.
  *
  * A diamond states parthood whether or not a stereotype is written, and an
  * unstereotyped one used to say anything at all: `event Wedding { <>-- Guest }`
  * with `Guest` a functional complex was accepted, making an object part of an
- * event. Outside the substantials the rule is simply that the part shares the
- * whole's nature -- an event has events as parts, a situation situations, a
- * relator relators, a quality qualities, a mode modes of its own sort -- and
- * `PARTHOOD_NATURE_PAIRS` carries that together with the crossings the
- * substantial stereotypes do allow.
+ * event. Most parts share the whole's nature -- an event has events as parts,
+ * a situation situations, a quality qualities. A relator can also have
+ * extrinsic modes as parts. `PARTHOOD_NATURE_PAIRS` carries these alongside
+ * the crossings the substantial stereotypes allow.
  *
  * Stereotyped parthood is left to `checkRelationStereotypeNatures`, which
  * tests the stereotype's own row and is stricter than this.
@@ -416,7 +416,7 @@ export function checkParthoodNatures(relation: Relation, accept: ValidationAccep
     const detail = reversed ? ' The diamond may be at the wrong end.' : '';
     accept(
         'error',
-        `Parthood does not cross natures: whole "${whole.name}" (${wholes.join(', ')}) cannot have part "${part.name}" (${parts.join(', ')}).${detail}`,
+        `Parthood does not admit whole "${whole.name}" (${wholes.join(', ')}) with part "${part.name}" (${parts.join(', ')}).${detail}`,
         { node: relation, code: 'parthood-crosses-natures', data: { reversed } }
     );
 }
@@ -480,6 +480,34 @@ export function holdsAccumulatingHistory(relation: Relation, side: 'source' | 't
     return holdsDependents(relation, side)
         || (side === 'source' && relation.stereotype === 'presence')
         || (side === 'target' && (relation.stereotype === 'triggering' || relation.stereotype === 'bringingAbout'));
+}
+
+/**
+ * A past event keeps its participants and the links to them. A source type
+ * whose membership can lapse cannot describe those same individuals for the
+ * lifetime of the historical link: a graduate remains the participant after
+ * ceasing to be a student. The temporal role at the event is a separate claim.
+ */
+export function checkHistoricalEventSourceCanLapse(relation: Relation, accept: ValidationAcceptor): void {
+    if (!['participation', 'creation', 'termination', 'change'].includes(relation.stereotype ?? '')) {
+        return;
+    }
+    const source = getRelationSource(relation);
+    const target = relation.target?.ref;
+    if (!source || !isClassDeclaration(source) || !target || !isClassDeclaration(target)) {
+        return;
+    }
+    const targetNatures = possibleNaturesOf(target);
+    if (!targetNatures || targetNatures.size !== 1 || !targetNatures.has('events')) {
+        return;
+    }
+    const stereotype = source.stereotype;
+    if ((!isAntiRigid(stereotype) || stereotype.startsWith('historical')) && !isSemiRigid(stereotype)) {
+        return;
+    }
+    accept('warning',
+        `Membership in "${source.name}" can lapse, but the link to a past "${target.name}" event remains. This "@${relation.stereotype}" may then imply membership in "${source.name}" after it ended. Use a rigid source type for the historical link and state the participant's role at the event separately.`,
+        { node: relation, code: 'historical-event-source-can-lapse' });
 }
 
 /**

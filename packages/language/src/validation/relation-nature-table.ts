@@ -283,16 +283,14 @@ export { TABLE_NATURE_NAMES, TONTO_NATURE_NAMES } from './natures.js';
  * A diamond states parthood on its own, and tonto lets it stand without a
  * stereotype -- which it must, since there is no stereotype for the
  * parthood of a relator, a quality or a mode. Those relations still cannot say
- * anything they like: parthood never crosses ontological natures. A part of an
- * event is an event, a part of a situation a situation, a part of a quality a
- * quality, and likewise for relators and for modes of either sort.
+ * anything they like: most parthood stays within one ontological nature. A
+ * part of an event is an event, a part of a situation a situation, and a part
+ * of a quality a quality. A relator may also have extrinsic modes as parts:
+ * the reciprocal rights and duties that compose an employment, for example.
  *
- * Only the substantials are richer, and only because a collective admits
- * members that are not collectives. That is why this is derived rather than
- * written out: every crossing pair a stereotype allows comes from the table
- * itself, and the same-nature pairs are added for the natures no parthood
- * stereotype covers. A row added to the table above therefore widens this
- * with it, and cannot fall out of step.
+ * The stereotyped crossings come from their table, and same-nature pairs are
+ * added for the natures no parthood stereotype covers. The one additional
+ * crossing, from relator whole to extrinsic-mode part, has no stereotype.
  *
  * A process's parts are processes, and nothing else. What it gains from events
  * is its constitution, not its parts: "we reject (V4*), following Baker in
@@ -304,7 +302,8 @@ export { TABLE_NATURE_NAMES, TONTO_NATURE_NAMES } from './natures.js';
  */
 export const PARTHOOD_NATURE_PAIRS: ReadonlySet<string> = new Set([
     ...[...PART_WHOLE_STEREOTYPES].flatMap(stereotype => RELATION_NATURE_TABLE[stereotype] ?? []),
-    ...Object.values(TABLE_NATURE_NAMES).map(nature => `${nature}:${nature}`)
+    ...Object.values(TABLE_NATURE_NAMES).map(nature => `${nature}:${nature}`),
+    'relator:extrinsic-mode'
 ]);
 
 /** The UFO categories, most specific first so a set gets its tightest name. */

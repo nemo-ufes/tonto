@@ -3,7 +3,7 @@ import { AstUtils } from 'langium';
 import type {
     Cardinality, Relation, RelationEndMetaAttributes, RelationEndTarget
 } from '../generated/ast.js';
-import { isClassDeclaration, isRelation } from '../generated/ast.js';
+import { isClassDeclaration, isDatatype, isEnumeration, isRelation } from '../generated/ast.js';
 import { isParthood } from '../utils/relations.js';
 import { naturesFitStereotype } from './relation-end-natures.js';
 import { hasImmutableInstances, holdsAccumulatingHistory, isSituationParthood } from './relation-nature-checks.js';
@@ -641,6 +641,24 @@ export function checkRelationHasTarget(relation: Relation, accept: ValidationAcc
         'error',
         'This relation has no target: name the class or datatype at its far end.',
         { node: relation, code: 'relation-without-target' }
+    );
+}
+
+/**
+ * A class-to-value relation may be a property whose value type belongs on an
+ * attribute. The relation is still valid: the author may intend a relation
+ * to the abstract individuals classified by the datatype or enumeration.
+ */
+export function checkValueRelationMayBeAttribute(relation: Relation, accept: ValidationAcceptor): void {
+    const source = getRelationSource(relation);
+    const target = relation.target?.ref;
+    if (!isClassDeclaration(source) || !target || (!isDatatype(target) && !isEnumeration(target))) {
+        return;
+    }
+    const kind = isEnumeration(target) ? 'an enumeration' : 'a datatype';
+    accept('hint',
+        `"${target.name}" is ${kind}. If it gives the possible values of a property of "${source.name}", write an attribute typed by "${target.name}" (for example, "propertyName: ${target.name}").`,
+        { node: relation, property: 'target', code: 'value-relation-may-be-attribute' }
     );
 }
 

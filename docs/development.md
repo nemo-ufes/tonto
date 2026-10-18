@@ -57,8 +57,8 @@ npm run lint
 package, MCP server, and VS Code extension. `npm test` runs language tests.
 `npm run test:vscode` runs extension integration tests in a real VS Code
 instance and may download that instance. `npm run test:gufo-conformance`
-requires Java and a ROBOT 1.9.10 jar supplied through
-`ROBOT_JAR`. It exports the pattern catalog, checks the resulting OWL with
+uses `robot` on `PATH`, or a ROBOT jar supplied through `ROBOT_JAR` with
+Java. CI uses ROBOT 1.9.10. It exports the pattern catalog, checks the resulting OWL with
 ROBOT, and asks HermiT to reject inconsistent ontologies or unsatisfiable
 named classes.
 

@@ -837,7 +837,7 @@ export class TontoCodeActionProvider implements CodeActionProvider {
         if (!sourceName || !targetName || !relatorName) {
             return undefined;
         }
-        const name = this.freeRelationName(recase(relator.name, 'lower'), source, pkg);
+        const name = this.freeRelationName(recase(relator.name, 'lower'), source);
         const line = `@material relation ${sourceName} ${writeMultiplicity(cardinalities.source)} -- ${name} -- `
             + `${writeMultiplicity(cardinalities.target)} ${targetName} derivedFrom ${relatorName}`;
         return this.rewrite(document, `Create derived material relation "${name}"`, [{
@@ -867,9 +867,8 @@ export class TontoCodeActionProvider implements CodeActionProvider {
             return undefined;
         }
 
-        const external = isExternalRelation(relation);
         const wanted = `inverse${recase(relation.name, 'upper')}`;
-        const name = this.freeRelationName(wanted, target, external ? pkg : undefined);
+        const name = this.freeRelationName(wanted, target);
         const plan = this.inverseToCreate(relation, name);
         if (!plan) {
             return undefined;
@@ -888,14 +887,13 @@ export class TontoCodeActionProvider implements CodeActionProvider {
             .some(referrer => isRelation(referrer) && referrer.inverseOf?.ref === relation);
     }
 
-    /** A name free both where a relation is declared and in its source class. */
-    private freeRelationName(wanted: string, owner: ClassDeclaration, pkg: Package | undefined): string {
+    /** A name free in a relation's source class, regardless of its spelling. */
+    private freeRelationName(wanted: string, owner: ClassDeclaration): string {
         const inherited = membersInScopeOf(owner, member => this.reverse.touching(member));
         const taken = new Set([
             ...collectMembers(owner, this.reverse).map(member => member.name),
             ...inherited.relations.keys(),
-            ...inherited.ends.keys(),
-            ...(pkg?.declarations.map(declaration => declaration.name) ?? [])
+            ...inherited.ends.keys()
         ]);
         if (!taken.has(wanted)) {
             return wanted;
@@ -1222,6 +1220,63 @@ export class TontoCodeActionProvider implements CodeActionProvider {
         return changes;
     }
 
+    /**
+     * The value-type hint offers a modeling choice, not an automatic repair.
+     * Only a plain, unreferenced relation can be replaced without leaving
+     * relation-specific declarations or references behind. Its target bound
+     * becomes the attribute's bound; the reverse bound has no attribute form.
+     */
+    private relationToAttribute(document: LangiumDocument, diagnostic: Diagnostic): CodeAction | undefined {
+        const relation = this.nodeAt(document, diagnostic, isRelation);
+        const source = relation && getRelationSource(relation);
+        const target = relation?.target?.ref;
+        if (!relation?.$cstNode || !relation.name || !source || !isClassDeclaration(source) || !source.$cstNode
+            || !target || !isDatatypeLike(target) || relation.stereotype || relation.isAggregation
+            || relation.isAggregationInverted || relation.sourceMeta || relation.targetMeta
+            || relation.specializes || relation.inverseOf || relation.derivedFrom.length > 0
+            || ownerOf(relation) !== ownerOf(source) || this.reverse.referrers(relation).length > 0
+            || collectMembers(source, this.reverse).some(member => member.name === relation.name && member.node !== relation)) {
+            return undefined;
+        }
+
+        // A relation may be written in another package or file. Ask the
+        // attribute's actual scope how to spell the target there.
+        const prospective = { $type: 'Attribute', $container: source } as unknown as Attribute;
+        const targetName = this.nameInScope(prospective, 'type', target);
+        if (!targetName) {
+            return undefined;
+        }
+        const cardinality = relation.targetCardinality?.$cstNode?.text;
+        const attribute = `${relation.name}: ${targetName}${cardinality ? ` ${cardinality}` : ''}`;
+        const sourceDocument = AstUtils.getDocument(source);
+        const changes: Record<string, TextEdit[]> = {};
+        const add = (uri: string, edit: TextEdit): void => { (changes[uri] ??= []).push(edit); };
+
+        if (isExternalRelation(relation)) {
+            const indent = ' '.repeat(source.$cstNode.range.start.character + 4);
+            const documentation = docLinesAbove(relation);
+            const carried = documentation.map(line => `${indent}/// ${line.text}\n`).join('');
+            const close = GrammarUtils.findNodeForKeyword(source.$cstNode, '}');
+            const insertion: TextEdit = close
+                ? { range: { start: close.range.start, end: close.range.start },
+                    newText: `${carried}${indent}${attribute}\n${' '.repeat(source.$cstNode.range.start.character)}` }
+                : { range: { start: source.$cstNode.range.end, end: source.$cstNode.range.end },
+                    newText: ` {\n${carried}${indent}${attribute}\n${' '.repeat(source.$cstNode.range.start.character)}}` };
+            add(sourceDocument.uri.toString(), insertion);
+            add(document.uri.toString(), { range: this.withDocumentation(relation, documentation), newText: '' });
+        } else {
+            add(document.uri.toString(), { range: relation.$cstNode.range, newText: attribute });
+        }
+
+        return {
+            title: `Use attribute "${attribute}" (drops the relation's reverse bound)`,
+            kind: CodeActionKind.QuickFix,
+            diagnostics: [diagnostic],
+            edit: { changes },
+            data: { batchSafe: false }
+        };
+    }
+
     /** The lines a relation occupies, its `///` run included. */
     private withDocumentation(relation: Relation, documentation: Array<{ line: number }>): Range {
         const lines = this.lineRange(relation.$cstNode!.range);
@@ -1305,9 +1360,10 @@ export class TontoCodeActionProvider implements CodeActionProvider {
         return leaf && AstUtils.getContainerOfType(leaf.astNode, isClassDeclaration);
     }
 
-    /** A name nothing in the package has taken. */
+    /** A name no non-relation declaration in the package has taken. */
     private freeName(wanted: string, pkg: Package): string {
-        const taken = new Set(pkg.declarations.map(declaration => declaration.name));
+        const taken = new Set(pkg.declarations.filter(declaration => !isExternalRelation(declaration))
+            .map(declaration => declaration.name));
         if (!taken.has(wanted)) {
             return wanted;
         }
@@ -1364,6 +1420,8 @@ export class TontoCodeActionProvider implements CodeActionProvider {
                 return asArray(this.changeStereotype(document, diagnostic, 'subkind', 'role'));
             case 'duplicate-member':
                 return asArray(this.removeDuplicateMember(document, diagnostic));
+            case 'value-relation-may-be-attribute':
+                return asArray(this.relationToAttribute(document, diagnostic));
             case 'categorizer-not-higher-order':
             case 'instance-of-not-higher-order':
                 return asArray(this.makeTargetHigherOrder(document, diagnostic));

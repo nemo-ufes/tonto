@@ -399,6 +399,31 @@ describe('completion', () => {
 });
 
 describe('quick fixes', () => {
+    test('turns a higher-order type relation to an enum into an attribute by choice', async () => {
+        const document = await parse(`ontology species
+type AnimalSpecies
+enum ConservationStatus { Endangered, Vulnerable }
+/// The conservation assessment of a species.
+relation AnimalSpecies [1] -- hasConservationStatus -- [0..1] ConservationStatus`);
+        const actions = await fixesFor(document, 'value-relation-may-be-attribute');
+        expect(actions).toHaveLength(1);
+        expect(actions[0].data).toEqual({ batchSafe: false });
+        const converted = applyFirst(document, actions);
+        expect(converted).toContain('type AnimalSpecies {\n    /// The conservation assessment of a species.\n'
+            + '    hasConservationStatus: ConservationStatus [0..1]\n}');
+        expect(converted).not.toContain('relation AnimalSpecies');
+        expect((await new TontoSession().validateText(converted)).filter(d => d.severity === 'error')).toEqual([]);
+    });
+
+    test('replaces an internal relation in place and leaves relation-specific claims alone', async () => {
+        const document = await parse('ontology products\ndatatype Code\nkind Product {\n    -- hasCode -- [*] Code\n}');
+        const actions = await fixesFor(document, 'value-relation-may-be-attribute');
+        expect(applyFirst(document, actions)).toContain('hasCode: Code [*]');
+        const constrained = await parse('ontology products\nenum Status { active }\nkind Product {\n'
+            + '    -- hasStatus -- (status) Status\n}');
+        expect(await fixesFor(constrained, 'value-relation-may-be-attribute')).toEqual([]);
+    });
+
     test('removes an unnecessary use, whole line', async () => {
         // Two documents of one ontology, so that the use reaches across them.
         await parse(`
@@ -3519,7 +3544,7 @@ describe('a moment with nothing to inhere in', () => {
     });
 });
 
-describe('parthood does not cross natures', () => {
+describe('parthood follows the admitted nature pairs', () => {
     async function verdict(source: string): Promise<string | undefined> {
         const document = await parse(source);
         return (document.diagnostics ?? []).find(d => d.code === 'parthood-crosses-natures')?.message;
@@ -3538,11 +3563,17 @@ describe('parthood does not cross natures', () => {
 
     test.each([
         ['a relator has relators as parts', 'relator Marriage {\n<>-- Commitment\n}\nrelator Commitment'],
+        ['a relator has extrinsic modes as parts', 'relator Marriage {\n<>-- Obligation\n}\nextrinsicMode Obligation'],
         ['a situation situations', 'situation Whole {\n<>-- Part\n}\nsituation Part'],
         ['a functional complex functional complexes', 'kind Car {\n<>-- Wheel\n}\nkind Wheel'],
         ['and a collective any substantial', 'collective Cellar {\n<>-- Wine\n}\nquantity Wine']
     ])('%s', async (_, body) => {
         expect(await verdict(`package p\n${body}`)).toBeUndefined();
+    });
+
+    test('an extrinsic mode does not have a relator as a part', async () => {
+        expect(await verdict('package p\nextrinsicMode Obligation {\n<>-- Marriage\n}\nrelator Marriage'))
+            .toBeDefined();
     });
 
     test('a stereotyped parthood is left to the stereotype check', async () => {

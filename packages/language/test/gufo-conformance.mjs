@@ -7,9 +7,8 @@ import { TontoSession } from '../out/api.js';
 import { catalog } from '../out/cli/patterns.js';
 
 const robotJar = process.env.ROBOT_JAR;
-if (!robotJar) {
-    throw new Error('Set ROBOT_JAR to the ROBOT executable jar (tested with ROBOT 1.9.10).');
-}
+const robotCommand = robotJar ? 'java' : 'robot';
+const robotPrefix = robotJar ? ['-jar', robotJar] : [];
 
 // Optional: the pySHACL command, to load each shapes graph (section 18).
 const pyshacl = process.env.PYSHACL;
@@ -23,11 +22,11 @@ copyFileSync(catalogFile, join(work, basename(catalogFile)));
 writeFileSync(join(work, 'empty.ttl'), '');
 
 function robot(...args) {
-    const run = spawnSync('java', ['-jar', robotJar, ...args], {
+    const run = spawnSync(robotCommand, [...robotPrefix, ...args], {
         encoding: 'utf8', maxBuffer: 16 * 1024 * 1024
     });
     if (run.status !== 0) {
-        throw new Error(`ROBOT ${args[0]} failed.\n${run.stdout}${run.stderr}`);
+        throw new Error(`ROBOT ${args[0]} failed.\n${run.error ?? ''}${run.stdout}${run.stderr}`);
     }
 }
 
@@ -37,6 +36,10 @@ const regressions = [
     {
         name: 'bounded-range',
         model: 'kind Car {\n    code: const string [1..2]\n    @componenthood [1] <>-- [2..4] (const) Wheel\n}\nkind Wheel\n'
+    },
+    {
+        name: 'historical-event-upper-bound',
+        model: 'kind Person\nevent Death\n@termination relation Person (const) [1] -- diedIn -- [0..1] Death\n'
     },
     {
         // A relational condition written as a union (section 10.1).
@@ -90,6 +93,24 @@ try {
         }
         robot('reason', '--reasoner', 'hermit', '--catalog', join(work, 'catalog-v001.xml'),
             '--input', ontology, '--output', join(work, `${stem}-reasoned.owl`));
+        if (pattern.name === 'historical-event-upper-bound') {
+            const abox = join(work, `${stem}-two-deaths.ttl`);
+            const aboxCatalog = join(work, `${stem}-catalog.xml`);
+            writeFileSync(aboxCatalog, readFileSync(join(work, 'catalog-v001.xml'), 'utf8').replace('</catalog>',
+                `  <uri name="${namespace.slice(0, -1)}" uri="${stem}.ttl"/>\n</catalog>`));
+            writeFileSync(abox, `@prefix : <${namespace}> .\n`
+                + '@prefix owl: <http://www.w3.org/2002/07/owl#> .\n'
+                + `<> a owl:Ontology ; owl:imports <${namespace.slice(0, -1)}> .\n`
+                + ':person a :Person ; :Person.diedIn :firstDeath, :secondDeath .\n'
+                + ':firstDeath a :Death .\n:secondDeath a :Death .\n'
+                + '[] a owl:AllDifferent ; owl:distinctMembers ( :firstDeath :secondDeath ) .\n');
+            const contradictory = spawnSync(robotCommand, [...robotPrefix, 'reason', '--reasoner', 'hermit',
+                '--catalog', aboxCatalog, '--input', abox, '--output', join(work, `${stem}-contradiction.owl`)],
+            { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+            if (contradictory.status === 0 || !/inconsisten/i.test(contradictory.stdout + contradictory.stderr)) {
+                throw new Error(`Two distinct deaths did not produce a reasoner inconsistency:\n${contradictory.stdout}${contradictory.stderr}`);
+            }
+        }
         // ROBOT's quality report: labels, header metadata, and the rest of
         // its default profile. Its warnings are OBO conventions -- an
         // IAO definition on every term -- that a gUFO model does not follow.

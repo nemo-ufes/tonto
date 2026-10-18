@@ -87,7 +87,7 @@ import { checkImports, checkNoDuplicatePackageNamesInDocument } from './validati
 import {
     checkAccumulates, checkCharacterizationBearerCardinality, checkCharacterizationIsReified,
     checkCreationEndIsConst, checkDependenceEndIsConst, checkDependenceEndIsMandatory,
-    checkImmutableEndIsConst, checkParthoodNatures,
+    checkImmutableEndIsConst, checkHistoricalEventSourceCanLapse, checkParthoodNatures,
     checkParticipationalPortionHasOneParticipant, checkParticipationalPortionParticipantsAgree,
     checkRelationStereotypeNatures
 } from './validation/relation-nature-checks.js';
@@ -126,6 +126,7 @@ import {
     checkShortRelationReferenceIsUnambiguous,
     checkRelationSpecializationNarrows,
     checkRelationHasTarget,
+    checkValueRelationMayBeAttribute,
     checkDiamondMarksOneEndOnly,
     checkRelationStereotypeIsKnown,
     checkDiamondMeansParthood
@@ -326,6 +327,7 @@ export function registerValidationChecks(services: TontoServices): AntiPatternSe
         ],
         Relation: [
             checkRelationHasTarget,
+            checkValueRelationMayBeAttribute,
             checkDiamondMarksOneEndOnly,
             materialHasRelator,
             checkDerivationIsWellFormed,
@@ -357,6 +359,7 @@ export function registerValidationChecks(services: TontoServices): AntiPatternSe
             checkImmutableEndIsConst,
             checkAddOnlyOnImmutableEnd,
             checkAccumulates,
+            checkHistoricalEventSourceCanLapse,
             checkCharacterizationIsReified,
             checkDependenceEndIsConst,
             checkCreationEndIsConst,

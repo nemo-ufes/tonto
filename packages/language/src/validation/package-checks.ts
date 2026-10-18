@@ -1,7 +1,7 @@
 import type { ValidationAcceptor } from 'langium';
 import { AstUtils } from 'langium';
 import type { ClassDeclaration, Model, Package } from '../generated/ast.js';
-import { isClassDeclaration, isModel, isOntologyBody } from '../generated/ast.js';
+import { isClassDeclaration, isExternalRelation, isModel, isOntologyBody } from '../generated/ast.js';
 import { getDirectGeneralizations } from '../utils/generalizations.js';
 import { chain } from './wording.js';
 
@@ -71,7 +71,10 @@ export function lowerCasePackageName(name: string): string {
 export function checkNoDuplicateDeclarationNames(pkg: Package, accept: ValidationAcceptor): void {
     const seen = new Map<string, boolean>();
     for (const declaration of pkg.declarations) {
-        if (!declaration.name) {
+        // A relation belongs to its source class's member namespace whether
+        // written here or inside that class. checkDuplicateMemberNames checks
+        // both forms together, including relations from other packages.
+        if (isExternalRelation(declaration) || !declaration.name) {
             continue;
         }
         if (seen.has(declaration.name)) {

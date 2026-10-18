@@ -12,7 +12,7 @@ import { BUILTIN_DATATYPES_URI } from '../workspace/builtin-datatypes.js';
  * model.
  *
  * A reference site sees, in this order:
- *  1. Every declaration of its own package (by simple name, and by
+ *  1. Every unambiguous declaration of its own package (by simple name, and by
  *     `PackageName.declName` for self-qualified references such as the
  *     `core.animals.Animal` seen inside `package core.animals` itself).
  *  2. Every declaration of each imported package (by `PackageName.declName`,
@@ -210,13 +210,24 @@ export class TontoScopeProvider extends DefaultScopeProvider {
 
     private computePackageDescriptions(pkg: Package, prefix: string | undefined): AstNodeDescription[] {
         const result: AstNodeDescription[] = [];
+        const relationNameCounts = new Map<string, number>();
+        for (const declaration of pkg.declarations) {
+            if (isExternalRelation(declaration) && declaration.name) {
+                relationNameCounts.set(declaration.name, (relationNameCounts.get(declaration.name) ?? 0) + 1);
+            }
+        }
         for (const declaration of pkg.declarations) {
             if (!declaration.name) {
                 continue;
             }
-            result.push(this.descriptions.createDescription(declaration, declaration.name));
-            if (prefix) {
-                result.push(this.descriptions.createDescription(declaration, `${prefix}.${declaration.name}`));
+            // A bare relation name can be used only while it identifies one
+            // relation in this package. Its source-qualified name is always
+            // available, as it is for a relation written inside the class.
+            if (!isExternalRelation(declaration) || relationNameCounts.get(declaration.name) === 1) {
+                result.push(this.descriptions.createDescription(declaration, declaration.name));
+                if (prefix) {
+                    result.push(this.descriptions.createDescription(declaration, `${prefix}.${declaration.name}`));
+                }
             }
             if (isClassDeclaration(declaration)) {
                 for (const relation of declaration.relations) {

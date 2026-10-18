@@ -83,7 +83,7 @@ export const RENAMED_STEREOTYPES: Readonly<Record<string, string>> = {
  * the word is unknown.
  */
 export const RETIRED_STEREOTYPES: Readonly<Record<string, string>> = {
-    derivation: 'a derivation is said on the derived relation itself: "derivedFrom" after a "@material" relation names the relator it is read off, and after a "@comparative" one the qualities it compares',
+    derivation: 'a derivation is said on the derived relation itself: "derivedFrom" after a "@material" relation names the relator or extrinsic mode it is read off, and after a "@comparative" one the qualities or intrinsic modes it compares',
     formal: 'tonto keeps "@comparative" for comparative relations and leaves other formal relations as plain associations',
     inherence: 'inherence is what "@characterization" and "@mediation" mean, not a stereotype of its own',
     value: 'tonto handles values through datatypes and attributes',

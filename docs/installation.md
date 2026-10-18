@@ -70,6 +70,11 @@ and Claude Code, preserving existing instructions and other MCP servers; the
 `tonto.agents.setUpOnCreate` setting turns that off. Opening a folder that
 has tonto files and no agent setup offers the same setup once.
 
+The walkthrough also recommends keeping an ongoing modeling workspace in a
+Git repository. Open VS Code's **Source Control** view to review an existing
+repository or select **Initialize Repository** for a new one. Git is optional;
+a local repository is enough, and it does not determine ontology membership.
+
 To start manually:
 
 1. Create or choose a folder for the model.
@@ -302,6 +307,12 @@ tonto incluído no VSIX para o Codex e o Claude Code, preservando as instruçõe
 e os demais servidores MCP existentes; a configuração
 `tonto.agents.setUpOnCreate` desativa isso. Abrir uma pasta que tem arquivos
 tonto e nenhuma configuração de agentes oferece a mesma configuração uma vez.
+
+O roteiro também recomenda manter um workspace de modelagem contínua em um
+repositório Git. Abra a visualização **Source Control** do VS Code para
+examinar um repositório existente ou selecione **Initialize Repository** para
+criar um novo. Git é opcional; um repositório local é suficiente e não
+determina quais arquivos pertencem a uma ontologia.
 
 Para começar manualmente:
 

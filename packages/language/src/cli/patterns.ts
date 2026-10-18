@@ -260,13 +260,13 @@ event AttendeeParticipation
 
 ['creation-termination', 'Events and situations', 'What created something, and what ended it',
  'The events at the two edges of an endurant’s life.',
- 'The direction matches gUFO’s `wasCreatedIn` and `wasTerminatedIn`: from the endurant to the event. The termination end is `[0..1]` -- something still existing has not been terminated.',
+ 'The direction matches gUFO’s `wasCreatedIn` and `wasTerminatedIn`: from the endurant to the event. One `Death` terminates one `Person`, so the person end is `[1]`. The termination event end is `[0..1]` -- someone still living has not been terminated.',
  'gUFO `wasCreatedIn` / `wasTerminatedIn`; Guizzardi et al. 2013',
  `kind Person
 event Birth
 event Death
 @creation relation Person (const) [1] -- wasCreatedIn -- [1] (const) Birth
-@termination relation Person (const) [0..1] -- wasTerminatedIn -- [0..1] (addOnly) Death`],
+@termination relation Person (const) [1] -- wasTerminatedIn -- [0..1] (addOnly) Death`],
 
 ['situation-causation', 'Events and situations', 'A situation triggers an event, which brings one about',
  'Causation, written as the chain UFO-B actually posits.',
@@ -299,7 +299,7 @@ relator Enrollment {
 
 ['historical-role-derived', 'Relators and roles', 'A historical role derived from what happened',
  'A type something belongs to forever because of how it took part in an event, written where it took part.',
- 'At the graduation the person was a student; being a graduate is what it made them. So the participation is the student\'s, and the historical role is derived from it: a graduate is a person who, as a student, graduated. Derived from an event, it never lapses -- the graduation does not stop having happened -- which is why the gUFO export writes it as a definition, `Graduate \u2261 Person \u2293 \u2203graduatedIn.Graduation`, where a role founded by a relator gets only a necessary condition. It specializes the rigid `Person`, not the `Student` role, which lapses.',
+ 'The participation in a graduation remains true after the person ceases to be a student, so its source is the rigid `Person`. The historical role is derived from that participation: a graduate is a person who graduated. It never lapses -- the graduation does not stop having happened -- which is why the gUFO export writes it as a definition, `Graduate \u2261 Person \u2293 \u2203graduatedIn.Graduation`, where a role founded by a relator gets only a necessary condition. Student status at the time of the event is a separate temporal claim.',
  'Guizzardi et al. 2018 (historical roles)',
  `kind Person
 role Student specializes Person
@@ -309,8 +309,8 @@ relator Enrollment {
     @mediation [0..*] -- [1] (const) University
 }
 event Graduation
-@participation relation Student (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
-historicalRole Graduate specializes Person derivedFrom Student.graduatedIn`],
+@participation relation Person (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
+historicalRole Graduate specializes Person derivedFrom Person.graduatedIn`],
 
 ['historical-role-from-creation', 'Relators and roles', 'A historical role founded by how something came to be',
  'A type something belongs to because of the event it was created in.',

@@ -11,6 +11,12 @@ Two jobs are described here. Skip to the one you have.
 
 ## Writing tonto
 
+For ongoing modeling, recommend keeping the workspace in a Git repository so
+model changes can be reviewed and recovered. Suggest initializing one if the
+workspace is not under Git, but do not initialize it or make commits unless
+the user asks. Git is optional and does not define a tonto workspace or
+ontology.
+
 ### Read the language first
 
     npx tonto guide
@@ -157,6 +163,13 @@ the words, and the four things to keep straight.
   workspace root, and its `locations` redirect import locations. Ontology
   headers and package declarations identify the members of each ontology.
 
+Relation names belong to their **source class**, whether written inside that
+class or at package level: `Person.worksFor` and `Company.worksFor` may coexist.
+Within one source class, a relation name must not duplicate another relation,
+an attribute, or a named end owned by that class. When a bare relation
+reference could name more than one relation, qualify it with its source class
+(and package when needed).
+
 Start a new model as a one-file ontology. Split it with the editor's *Split
 into an ontology file and package* refactoring rather than by hand, and do not
 create a `tonto.json` unless a location needs redirecting. Use *ontology
@@ -266,8 +279,8 @@ which is whether the edit was a step backwards.
   `non-sortal-natures-unstated` offers the clause read off what is beneath it.
 - **A historical role that takes part in its own cause.** At the graduation
   the person was a student; being a graduate is what it made them. Write the
-  participation where it happened and derive the role from it:
-  `historicalRole Graduate specializes Person derivedFrom Student.graduatedIn`.
+  lasting participation from the rigid `Person` and derive the role from it:
+  `historicalRole Graduate specializes Person derivedFrom Person.graduatedIn`.
   A creation or a termination founds one too --
   `historicalRole BornInBrazil specializes Person derivedFrom BirthInBrazil`.
   The role specializes the rigid type, not the role that lapses.
@@ -312,6 +325,8 @@ which is whether the edit was a step backwards.
   employee and an organization because an employment binds the two: write the
   relator, and say so on the relation --
   `@material relation Employee -- worksFor -- Organization derivedFrom Employment`.
+  A material relation may also be derived from an `extrinsicMode` that inheres
+  in one end and externally depends on the other.
   A `@comparative` is read off qualities the same way, `derivedFrom Height`.
   No other relation takes the clause.
 - **An event participation named in the present.** A modeled `event` has
@@ -319,6 +334,12 @@ which is whether the edit was a step backwards.
   `Person -- delivered -- KeynoteSpeech`, not `delivers`; `participatedIn`,
   not `participatesIn`. A `process` may still be unfolding, so a participation
   in one may use the present, such as `Baker -- performs -- Baking`.
+- **A lasting event link from a type that can lapse.** Someone remains the
+  participant in a graduation after ceasing to be a `Student`. Give the
+  `@participation`, `@creation`, `@termination` or `@change` into a completed
+  event a rigid source such as `Person`; state the role held at the event
+  separately. `historical-event-source-can-lapse` warns about a role, phase
+  or semi-rigid mixin as the source.
 - **An ultimate sortal under another.** `kind`, `relator`, `event`, `type`,
   `abstractum` and the rest top their lineages; what specializes them is a
   `subkind`, `role` or `phase`.
@@ -375,7 +396,7 @@ which is whether the edit was a step backwards.
     npm test
     npm run lint
     npm run test:vscode            # the extension in a real VS Code (downloads one)
-    npm run test:gufo-conformance  # needs ROBOT_JAR, a ROBOT 1.9.10 jar, and Java
+    npm run test:gufo-conformance  # uses robot on PATH, or ROBOT_JAR and Java
 
 CI runs build, test and lint on Linux, Windows and macOS, the VS Code tests
 on Linux under xvfb, and the conformance check with ROBOT; it also packages
@@ -435,11 +456,12 @@ about all of them.
 
 ### Refactorings, beside the repairs
 
-Three actions are offered where the cursor is, rather than against a
-diagnostic: *Write the relator this is derived from* on a `@material`
-relation with none, and *Write this at package level* / *Write this inside
-"X"* to move a relation between its two spellings. The two forms of a
-relation say the same thing -- `getRelationSource` reads the container for
+Four actions are offered where the cursor is, rather than against a
+diagnostic: *Write the relator this is derived from* and *Write the extrinsic
+mode this is derived from* on a `@material` relation with none, and *Write this
+at package level* / *Write this inside "X"* to move a relation between its
+two spellings. The two forms of a relation say the same thing --
+`getRelationSource` reads the container for
 one and the reference for the other -- so moving one is a move, and the test
 for it is that the model says exactly what it said before.
 

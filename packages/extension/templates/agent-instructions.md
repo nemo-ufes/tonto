@@ -7,6 +7,10 @@ TypeScript, JSON, Turtle, or free-form text.
 
 ## Before changing a model
 
+- For ongoing modeling, recommend keeping the workspace in a Git repository
+  so changes can be reviewed and recovered. If it is not under Git, suggest
+  initialization once; do not initialize a repository or make commits unless
+  the user asks. Git is optional and does not affect tonto validation.
 - Read the target file, its ontology header or `package ... in` line, its
   `use` and `import` declarations, and the other `.tonto` files in the
   workspace. Validation often depends on declarations in more than one file.
@@ -18,12 +22,14 @@ TypeScript, JSON, Turtle, or free-form text.
   as `category Agent of functional-complexes`. List several natures only when
   it really spans them.
 - Derive a `historicalRole` from what happened, written where it happened:
-  `historicalRole Graduate specializes Person derivedFrom Student.graduatedIn`.
+  `historicalRole Graduate specializes Person derivedFrom Person.graduatedIn`.
   A `@participation`, `@creation` or `@termination` can found one.
 - Name an `@participation` from an object to an `event` in the past, because a
   modeled event has occurred: `delivered`, `attended`, `participatedIn`, not
   `delivers`, `attends`, `participatesIn`. A possibly ongoing `process` may
-  still take a present-tense name such as `performs`.
+  still take a present-tense name such as `performs`. Source a lasting event
+  link from a rigid type: a person remains a graduation participant after
+  ceasing to be a student.
 - Distinguish event decompositions by their criterion. Use `@structural` for
   parts that belong to the definition of the whole. Use `@temporal` only for
   maximal segments projected by an external temporal scheme, such as the
@@ -38,6 +44,12 @@ TypeScript, JSON, Turtle, or free-form text.
   say that a declaration stores, tracks, captures, or records facts. Use such
   verbs only when they name an action or concept in the domain itself, as when
   a civil register records a birth.
+- Treat a relation name as a member of its source class, whether the relation
+  is written inside that class or at package level. `Person.worksFor` and
+  `Company.worksFor` may coexist. Within one source class, do not reuse a
+  relation name for another relation, an attribute, or a named end owned by
+  that class. Qualify an ambiguous bare relation reference with its source
+  class (and package when needed).
 - Do not invent syntax or silently translate the model into another ontology
   language.
 

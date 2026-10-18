@@ -165,7 +165,7 @@ be written:
 | Model says | Sound under the reading? | So the exporter writes |
 |---|---|---|
 | Lower bound *n* at an end | Yes -- at least *n* at every time is at least *n* at some time | a min restriction, always |
-| Upper bound *m* at an end | Only if no link, once held, is ever given up for another -- the end is effectively `const` or `addOnly` -- **and** membership in the owner never lapses once acquired (section 10) | a max restriction only then |
+| Upper bound *m* at an end | Only if no link, once held, is ever given up for another -- the end is effectively `const` or `addOnly`, including historical links to completed events -- **and** membership in the owner never lapses once acquired (section 10) | a max restriction only then |
 | A disjoint pair with one lifetime-wide class, or two never-lapsing classes | Yes -- the memberships must overlap if both ever hold | `owl:disjointWith`, or `owl:AllDisjointClasses` when every pair is sound |
 | Two lifetime-variable classes in a `disjoint` set | No -- a child now, an adult later: over a life, both | nothing for that pair; reported |
 | A `complete` set | Yes -- at every time in some specific, so at some time | `owl:equivalentClass` with the union |
@@ -974,12 +974,16 @@ property expression `PE` -- `P` for a target end or an attribute,
     rules do not refuse the model, so a model that validates may still omit
     the word, and the export must not depend on it. An *error* that would
     force the word -- `quantity-part-not-essential` -- is not implied here:
-    a model that exports already has `const` written. `@termination`'s event
-    end is made once, but no check currently asks for `addOnly`; until one
-    does, that end is not implied, and a finite upper bound there is
-    withheld unless written. `addOnly` qualifies because a set that never
-    loses a member and never exceeds `u` at one time never holds more than
-    `u` across a lifetime.
+    a model that exports already has `const` written. A relation expressing
+    a historical link to a completed event also has effectively `addOnly`
+    links at both ends, without requiring the word: `@participation`,
+    `@creation`, `@change`, `@termination`, `@manifestation` and
+    `@historicalDependence` with an event target. A completed event and who
+    took part in it, was created or terminated in it, or historically depends
+    on it do not change. If a growing set never exceeds `u` at one time, its
+    accumulated set never exceeds `u` either. This does not follow merely
+    from the target being an event: a plain association to a past event may
+    lapse. Nor does it apply to a process, which may still be unfolding.
   - *Owner membership never lapses* for a rigid stereotype (`isRigid`), a
     `historicalRole`/`historicalRoleMixin`, or a classifier all of whose
     possible natures are in `IMMUTABLE_NATURES` (events, situations and
@@ -1060,8 +1064,9 @@ it from the stereotype too:
   loyalty card a personal customer may hold does not make them a customer.
 - **What is derived.** A historical role may instead name what founds it
   where that is written: `historicalRole Graduate specializes Person
-  derivedFrom Student.graduatedIn`, since at the graduation the person was a
-  student and being a graduate is what it made them. The clause names a
+  derivedFrom Person.graduatedIn`. The lasting participation has the rigid
+  `Person` as its source; whether that person was a student at the time is a
+  separate temporal claim. The clause names a
   `@participation`, `@creation` or `@termination` -- several, for a
   disjunction -- or an event type, standing for the one such relation into it
   or an event type above it that could be meant, read for the type named. The
@@ -1070,7 +1075,7 @@ it from the stereotype too:
   ```turtle
   :Graduate owl:equivalentClass [ a owl:Class ; owl:intersectionOf (
       :Person
-      [ a owl:Restriction ; owl:onProperty :Student.graduatedIn ; owl:someValuesFrom :Graduation ] ) ] .
+      [ a owl:Restriction ; owl:onProperty :Person.graduatedIn ; owl:someValuesFrom :Graduation ] ) ] .
   ```
 
   The intersection is with the role's direct supertypes, and the filler is

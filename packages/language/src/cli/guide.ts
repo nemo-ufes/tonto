@@ -235,12 +235,23 @@ Written \`@stereotype relation A [n] -- name -- [m] B\`, or inside a class body
 with the source left out. Ends read source → target, except parthood, where
 the diamond marks the whole.
 
+A relation name belongs to its source class in either form: \`Person.worksFor\`
+and \`Company.worksFor\` may coexist. It must be distinct from other relation
+names, attributes and named ends owned by the same class. Qualify a bare
+relation reference with its source class when the name alone is ambiguous.
+
 Names are lower-camel-case verbal phrases read from source to target. A
 modeled \`event\` has occurred, so name an \`@participation\` toward an event in
 the past: \`Person -- delivered -- KeynoteSpeech\` or
 \`Person -- participatedIn -- Conference\`. Do not write \`delivers\` or
 \`participatesIn\`. A participation in a \`process\` may use the present when the
 process may still be unfolding: \`Baker -- performs -- Baking\`.
+
+A link to a completed event remains part of the participant's history. Its
+source should be a rigid type such as \`Person\`: a \`Student\` may cease to be
+one while still being the person who graduated. The temporal role held at the
+event is a separate claim. \`historical-event-source-can-lapse\` warns when a
+lasting event link instead starts at a type whose membership can end.
 
 ${RELATION_STEREOTYPES.map(s => `  @${s.padEnd(20)} ${signatureOf(s)}`).join('\n')}
 
@@ -293,8 +304,8 @@ A historical role is derived the same way, from what happened. Name the
 participation, creation or termination that makes one, written where it
 happened, after what the role specializes:
 
-    @participation relation Student (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
-    historicalRole Graduate specializes Person derivedFrom Student.graduatedIn
+    @participation relation Person (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
+    historicalRole Graduate specializes Person derivedFrom Person.graduatedIn
 
 Naming the event, \`derivedFrom Graduation\`, is enough where only one such
 relation reaches it, and a narrower event type is read for that type:
@@ -320,7 +331,7 @@ one sub-quantity of a kind, and it is never shared. A collective has at most
 one sub-collection of a kind; whether its *members* are essential is the
 model's to say, by writing \`const\` at the member end or not.
 
-Outside the substantials parthood does not cross natures; what does:
+Most parthood stays within one nature. These crossings are admitted:
 
 ${parthood.map(pair => `  ${pair}`).join('\n')}
 

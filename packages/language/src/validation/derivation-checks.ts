@@ -45,7 +45,7 @@ export function checkDerivationIsWellFormed(relation: Relation, accept: Validati
         const written = relation.stereotype ? `A "@${relation.stereotype}" relation` : 'A relation without a stereotype';
         accept(
             'error',
-            `${written} is not derived from anything. Only a "@material" relation, read off the relator that binds its ends, and a "@comparative" one, read off the qualities it compares, have a "derivedFrom".`,
+            `${written} is not derived from anything. Only a "@material" relation, read off a relator or extrinsic mode, and a "@comparative" one, read off qualities or intrinsic modes, have a "derivedFrom".`,
             { node: relation, keyword: 'derivedFrom', code: 'derivation-on-underived-relation' }
         );
         return;
@@ -68,7 +68,7 @@ export function checkDerivationIsWellFormed(relation: Relation, accept: Validati
     if (relation.stereotype === 'material' && relation.derivedFrom.length > 1) {
         accept(
             'error',
-            'A material relation is derived from one relator: its links are the ones that relator binds, and two relators bind two sets of links. Write a relation for each.',
+            'A material relation is derived from one extrinsic aspect: a relator binding both ends or an extrinsic mode inhering in one and depending on the other. Write a relation for each distinct ground.',
             { node: relation, property: 'derivedFrom', index: 1, code: 'material-derived-from-many' }
         );
     }
