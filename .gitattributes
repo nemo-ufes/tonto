@@ -1,0 +1,9 @@
+# Text is LF everywhere, Windows checkouts included: the tests compare models,
+# exports and positions byte for byte, and a CRLF checkout changes all three.
+* text=auto eol=lf
+*.vsix binary
+*.png binary
+
+# Preserve the canonical gUFO 1.0.0 release byte-for-byte, including the
+# trailing spaces in its published Turtle string literals.
+packages/language/test/fixtures/gufo-1.0.0.ttl -whitespace

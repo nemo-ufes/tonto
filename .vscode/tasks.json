@@ -1,0 +1,60 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            // The whole workspace, in dependency order: regenerate the parser
+            // and AST from the grammar, typecheck the language package, then
+            // bundle the extension host and the language server.
+            //
+            // Deliberately not a narrower command. The extension bundles the
+            // server straight from `packages/language/src`, so esbuild alone
+            // produces a working server -- but esbuild only strips types, it
+            // does not check them, and a build that cannot fail on a type
+            // error will happily launch a broken server. Running `tsc` here is
+            // what makes F5 refuse to start when something does not compile.
+            //
+            // Takes a couple of seconds from cold, which is worth paying every
+            // launch to know that what is running is what is on disk.
+            "label": "Build extension",
+            "type": "shell",
+            "command": "npm run build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$tsc"
+            ],
+            "presentation": {
+                "reveal": "silent",
+                "clear": true
+            }
+        },
+        {
+            // For a tight edit loop: leave this running and use "Run Extension
+            // (no build)" so a launch does not wait for a full rebuild.
+            // Reload the Extension Development Host window to pick up a
+            // rebuilt language server.
+            "label": "Watch",
+            "type": "shell",
+            "command": "npm run watch",
+            "isBackground": true,
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "npm test",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

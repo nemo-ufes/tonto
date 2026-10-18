@@ -1,0 +1,72 @@
+name: CI
+
+# Build, test and lint on every system the extension is used on: the export
+# writer leans on rename, hard links and symlinks, and paths are written with
+# the system's separator, so Linux alone does not show what Windows does.
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run lint
+
+  # The extension inside a real VS Code: its language server, its agent
+  # tools, and the Codex and Claude setup, run as an editor runs them.
+  vscode:
+    name: VS Code integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/cache@v4
+        with:
+          path: packages/extension/.vscode-test
+          key: vscode-test-${{ runner.os }}
+      - run: xvfb-run -a npm run test:integration --workspace=tonto-vscode
+
+  # The .vsix as it would be installed. A file left out of the package, or a
+  # manifest vsce refuses, shows here rather than when someone packages by hand.
+  package:
+    name: Package the extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Package without bumping the version
+        working-directory: packages/extension
+        run: npx vsce package --no-dependencies -o tonto.vsix
+      - uses: actions/upload-artifact@v5
+        with:
+          name: tonto-vsix
+          path: packages/extension/tonto.vsix
+          retention-days: 14

@@ -1,0 +1,24 @@
+{
+    "name": "tonto-redesign",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "packages/*"
+    ],
+    "scripts": {
+        "langium:generate": "npm run langium:generate --workspace=tonto-language",
+        "build": "npm run langium:generate && npm run build --workspace=tonto-language && npm run build --workspace=tonto-mcp && npm run build --workspace=tonto-vscode",
+        "package": "npm run build && npm run package --workspace=tonto-vscode",
+        "watch": "npm run watch --workspaces --if-present",
+        "test": "npm run test --workspace=tonto-language",
+        "test:vscode": "npm run build && npm run test:integration --workspace=tonto-vscode",
+        "test:gufo-conformance": "npm run build && node packages/language/test/gufo-conformance.mjs",
+        "lint": "npm run lint --workspaces --if-present"
+    },
+    "devDependencies": {
+        "typescript": "^5.6.0"
+    },
+    "engines": {
+        "node": ">=22"
+    }
+}

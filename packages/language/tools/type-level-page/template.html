@@ -1,0 +1,189 @@
+<title>tonto: the type level</title>
+<style>
+:root {
+  --ground:#FAFAF8; --surface:#FFFFFF; --sunk:#F1F2EF; --rule:#DEDFDA; --rule-soft:#E9EAE6;
+  --ink:#16181A; --body:#373B3D; --muted:#5F6568; --faint:#8B9194;
+  --accent:#0E5C66; --accent-soft:#E0EFF0;
+  --p1:#7C4B86; --p2:#A6532C; --p3:#2C5E8E; --p4:#4E6B2E; --p5:#8A6A1F; --p6:#6B6F73;
+  --p1-bg:#F1E9F3; --p2-bg:#F7EAE2; --p3-bg:#E5EDF5; --p4-bg:#EBF0E4; --p5-bg:#F6F0DE; --p6-bg:#EDEEEF;
+  --ok-bg:#E0EFF0;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#111314; --surface:#181B1C; --sunk:#15181A; --rule:#282D2F; --rule-soft:#212527;
+    --ink:#E9EDEE; --body:#C4CACC; --muted:#949B9E; --faint:#6E7578;
+    --accent:#5FC2CC; --accent-soft:#12292C;
+    --p1:#C79BD0; --p2:#E0A07A; --p3:#8FB6DA; --p4:#A8C287; --p5:#D8BE76; --p6:#A2A8AC;
+    --p1-bg:#241C27; --p2-bg:#2A1F19; --p3-bg:#16222C; --p4-bg:#1D2419; --p5-bg:#282213; --p6-bg:#1E2022;
+    --ok-bg:#12292C;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#111314; --surface:#181B1C; --sunk:#15181A; --rule:#282D2F; --rule-soft:#212527;
+  --ink:#E9EDEE; --body:#C4CACC; --muted:#949B9E; --faint:#6E7578;
+  --accent:#5FC2CC; --accent-soft:#12292C;
+  --p1:#C79BD0; --p2:#E0A07A; --p3:#8FB6DA; --p4:#A8C287; --p5:#D8BE76; --p6:#A2A8AC;
+  --p1-bg:#241C27; --p2-bg:#2A1F19; --p3-bg:#16222C; --p4-bg:#1D2419; --p5-bg:#282213; --p6-bg:#1E2022;
+  --ok-bg:#12292C;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--body);
+  font-family:var(--serif); font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+.wrap { max-width:1240px; margin:0 auto; padding:0 24px 96px; }
+header.top { padding:60px 0 32px; border-bottom:1px solid var(--rule); }
+.eyebrow { font-family:var(--sans); font-size:11px; font-weight:650; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+h1 { font-family:var(--sans); font-weight:700; letter-spacing:-.024em; line-height:1.03;
+  font-size:clamp(2rem,5vw,3.2rem); color:var(--ink); margin:0 0 16px; text-wrap:balance; }
+.lede { font-size:1.06rem; max-width:66ch; margin:0 0 26px; }
+.counts { display:flex; flex-wrap:wrap; gap:32px; }
+.counts b { display:block; font-family:var(--sans); font-size:1.45rem; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+.counts span { font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--muted); }
+section { margin-top:56px; }
+h2 { font-family:var(--sans); font-size:1.3rem; font-weight:680; letter-spacing:-.015em;
+  color:var(--ink); margin:0 0 6px; }
+.why { margin:0 0 22px; color:var(--muted); max-width:74ch; font-size:.97rem; }
+table { border-collapse:collapse; width:100%; background:var(--surface); }
+.scroll { overflow-x:auto; border:1px solid var(--rule); border-radius:3px; }
+.props th, .props td { text-align:left; padding:7px 12px; border-bottom:1px solid var(--rule-soft);
+  font-family:var(--sans); font-size:13px; }
+.props thead th { font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted);
+  border-bottom:1px solid var(--rule); }
+.props tbody th { font-family:var(--mono); font-size:12.5px; color:var(--ink); font-weight:600; }
+.props .nat { color:var(--muted); }
+.any { font-style:italic; }
+.tiers { display:grid; gap:10px; margin:0; padding:0; list-style:none; }
+.tiers li { background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:10px 14px; }
+.tiers b { font-family:var(--sans); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); display:block; margin-bottom:4px; }
+.tiers code { font-family:var(--mono); font-size:12px; color:var(--ink); }
+.principle { background:var(--surface); border:1px solid var(--rule); border-radius:3px;
+  padding:14px 16px; margin-bottom:10px; }
+.principle header { display:flex; align-items:baseline; gap:10px; }
+.principle h3 { font-family:var(--sans); font-size:1rem; font-weight:660; color:var(--ink); margin:0; flex:1; }
+.principle p { margin:8px 0 0; font-size:.95rem; color:var(--body); }
+.tally { font-family:var(--sans); font-variant-numeric:tabular-nums; font-weight:700; color:var(--muted); }
+.chip { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
+  border-radius:3px; font-family:var(--sans); font-size:11.5px; font-weight:700; color:#fff; }
+.p1 { background:var(--p1); } .p2 { background:var(--p2); } .p3 { background:var(--p3); }
+.p4 { background:var(--p4); } .p5 { background:var(--p5); } .p6 { background:var(--p6); }
+.matrix { border-collapse:separate; border-spacing:0; font-family:var(--sans); }
+.matrix th, .matrix td { font-size:11px; }
+.matrix th.col { height:112px; padding:0 0 6px; vertical-align:bottom; background:var(--surface);
+  position:sticky; top:0; z-index:2; border-bottom:1px solid var(--rule); }
+.matrix th.col span { display:inline-block; writing-mode:vertical-rl; transform:rotate(180deg);
+  font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:500; }
+.matrix th.row { text-align:right; padding:0 10px; font-family:var(--mono); font-size:11.5px;
+  color:var(--ink); font-weight:600; white-space:nowrap; position:sticky; left:0; z-index:1;
+  background:var(--surface); border-right:1px solid var(--rule); }
+.matrix td { width:26px; height:24px; text-align:center; border-bottom:1px solid var(--rule-soft);
+  border-right:1px solid var(--rule-soft); font-variant-numeric:tabular-nums; }
+.matrix td.ok { background:var(--ok-bg); color:var(--accent); font-size:12px; }
+.matrix td.no { color:var(--muted); }
+.matrix td.p1 { background:var(--p1-bg); color:var(--p1); }
+.matrix td.p2 { background:var(--p2-bg); color:var(--p2); }
+.matrix td.p3 { background:var(--p3-bg); color:var(--p3); }
+.matrix td.p4 { background:var(--p4-bg); color:var(--p4); }
+.matrix td.p5 { background:var(--p5-bg); color:var(--p5); }
+.matrix .corner { position:sticky; left:0; top:0; z-index:3; background:var(--surface);
+  border-right:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+ul.legend { display:flex; flex-wrap:wrap; gap:8px 22px; list-style:none; margin:14px 0 0; padding:0;
+  font-family:var(--sans); font-size:12.5px; color:var(--muted); }
+ul.legend li { display:flex; align-items:center; gap:7px; }
+ul.legend b { color:var(--ink); font-variant-numeric:tabular-nums; }
+.mlt th, .mlt td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--rule-soft);
+  font-size:.93rem; vertical-align:top; }
+.mlt th { width:22%; }
+.reach td, .reach th { text-align:left; padding:8px 12px; border-bottom:1px solid var(--rule-soft);
+  font-size:.93rem; vertical-align:top; }
+.reach .prop { font-family:var(--sans); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--accent); white-space:nowrap; width:1%; }
+.reach th { width:26%; }
+code { font-family:var(--mono); font-size:.87em; background:var(--sunk); border:1px solid var(--rule-soft);
+  border-radius:2px; padding:1px 4px; color:var(--ink); }
+.mlt code, .reach code { background:none; border:0; padding:0; color:var(--accent); }
+footer { margin-top:56px; padding-top:22px; border-top:1px solid var(--rule);
+  font-family:var(--sans); font-size:12.5px; color:var(--muted); max-width:74ch; }
+a { color:var(--accent); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">tonto &middot; OntoUML / UFO</p>
+  <h1>The type level</h1>
+  <p class="lede">Every ontological rule in this language rests on something said about a <em>type</em>: what
+  identity its instances carry, whether they can stop being instances, what they may be, and at which
+  classification level they sit. Those four properties, the six principles that combine them, and the
+  {{SIZE}}&times;{{SIZE}} table the principles decide &mdash; computed here, not transcribed.</p>
+  <div class="counts">{{COUNTS}}</div>
+</header>
+
+<section>
+  <h2>What a stereotype fixes</h2>
+  <p class="why">Four properties, and every one of them is a claim about the instances. Sortality says whether
+  they carry a principle of identity and where it comes from; rigidity, whether one can stop being an instance
+  and go on existing; the natures, what sort of thing they may be; the order, whether they are themselves
+  types. Nothing else about a stereotype is load-bearing.</p>
+  <div class="scroll"><table class="props">
+    <thead><tr><th>stereotype</th><th>sortality</th><th>rigidity</th><th>instances may be</th><th>order</th></tr></thead>
+    <tbody>{{PROPS}}</tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>The natures, in tiers</h2>
+  <p class="why">A lattice, not a flat set of labels: comparing natures by string equality gets subsumption
+  wrong in both directions. <code>objects</code> is the one name standing for several, and the tiers below are
+  what the rules actually ask for &mdash; anti-rigidity asks whether instances can <em>change</em>, which is not
+  the same question as whether they endure.</p>
+  <ul class="tiers">{{TIERS}}</ul>
+</section>
+
+<section>
+  <h2>The six principles</h2>
+  <p class="why">Each refuses a share of the {{PAIRS}} ordered pairs, and the counts are computed by asking the
+  implementation, pair by pair, why it says no. A refusal names its principle rather than restating a table,
+  which is the point of having them: the taxonomy is not a list to maintain.</p>
+  {{PRINCIPLES}}
+</section>
+
+<section>
+  <h2>Which stereotype may specialize which</h2>
+  <p class="why">Rows specialize columns. A tick is admissible; a number is the principle that refuses, and
+  hovering any cell gives the sentence the language would say. Read down a column to see what may sit under a
+  type, across a row to see what a type may sit under.</p>
+  <div class="scroll"><table class="matrix">
+    <thead><tr><th class="corner"></th>{{MATRIX_HEAD}}</tr></thead>
+    <tbody>{{MATRIX}}</tbody>
+  </table></div>
+  <ul class="legend">{{LEGEND}}</ul>
+</section>
+
+<section>
+  <h2>Types of types</h2>
+  <p class="why">The order of a type is where the type level folds back on itself: an instance of an order-<i>n</i>
+  type is an order-(<i>n</i>&minus;1) type. tonto says it with the <code>types</code> nature and an
+  <code>instanceOf</code> clause rather than with an integer, and the multi-level rules are the axiomatized
+  theory of Carvalho and Almeida read as checks.</p>
+  <div class="scroll"><table class="mlt"><tbody><tr><th><code>powertype-does-not-classify-types</code></th><td>A Cardelli power type holds every specialization of its base, and specializations are types — so &quot;isPowerType&quot; only says something on a class restricted to types. It is a modifier rather than a stereotype because what the class is stays open: a &quot;type&quot;, a &quot;category of types&quot; and a &quot;class of types&quot; may each carry it.</td></tr><tr><th><code>powertype-without-base</code></th><td>A power type is defined by the type it is the power type of (MLT D3).</td></tr><tr><th><code>powertype-not-unique</code></th><td>isPowertypeOf is a bijection between adjacent orders.</td></tr><tr><th><code>powertype-instantiation-multiplicity</code></th><td>MLT fixes both bounds of a power type instantiation at [1..*].</td></tr><tr><th><code>powertype-as-categorizer</code></th><td>A power type supplies no classification criterion, so it categorizes nothing.</td></tr><tr><th><code>instantiation-cycle</code></th><td>Instantiation raises the order by exactly one, so it cannot return.</td></tr><tr><th><code>categorizer-not-under-powertype</code></th><td>Everything a criterion picks out is an instance of the base type’s powertype.</td></tr><tr><th><code>powertype-hierarchy-mismatch</code></th><td>The power type hierarchy mirrors the base hierarchy.</td></tr><tr><th><code>partition-specializes-partition</code></th><td>Two partitions of one type cut it along independent criteria.</td></tr><tr><th><code>genset-contradicts-instantiation</code></th><td>A generalization set’s own constraints may not contradict the instantiation multiplicity (Table 3).</td></tr><tr><th><code>instance-not-specializing-base</code></th><td>An instance of a categorizer specializes what that categorizer categorizes (gufoshapes).</td></tr><tr><th><code>instance-is-its-own-base</code></th><td>A &quot;type&quot; categorizes properly, so its base type is not among its instances.</td></tr><tr><th><code>partition-instances-not-disjoint</code></th><td>The instances of a partitioning type cannot overlap (gufoshapes).</td></tr></tbody></table></div>
+</section>
+
+<section>
+  <h2>Where the type level reaches the individual level</h2>
+  <p class="why">These are rules about relations, parts, properties and instants &mdash; and each one asks a
+  question about a <em>type</em> before it can decide. That is what makes them ontological rather than
+  structural: the same diagram means different things under different stereotypes.</p>
+  <div class="scroll"><table class="reach"><tbody><tr><td class="prop">natures</td><th><code>relation-end-nature-mismatch</code></th><td>What a stereotype may relate is a pair of natures, and a class’s natures come from its stereotype and its ancestors.</td></tr><tr><td class="prop">natures</td><th><code>parthood-crosses-natures</code></th><td>Parthood stays within a nature, but for the collective and the process.</td></tr><tr><td class="prop">natures</td><th><code>immutable-end-not-const</code></th><td>An event, a situation and an abstract individual cannot change, so an end belonging to one is <code>{const}</code>.</td></tr><tr><td class="prop">natures</td><th><code>immutable-attribute-not-const</code></th><td>The same, for the other half of what a classifier declares.</td></tr><tr><td class="prop">natures</td><th><code>accumulating-end-not-add-only</code></th><td>What a process is constituted by, what makes it up, and a situation’s parts accumulate: <code>{addOnly}</code>.</td></tr><tr><td class="prop">natures</td><th><code>characterization-bearer-not-reifiable</code></th><td>Aspects are reified for what has a life to bear them — the endurants, and processes.</td></tr><tr><td class="prop">natures</td><th><code>quantity-part-not-essential</code></th><td>A quantity is extensional, so every part of one is essential.</td></tr><tr><td class="prop">natures</td><th><code>end-time-point-not-optional</code></th><td>An instance that may still be unfolding has no end point yet.</td></tr><tr><td class="prop">natures</td><th><code>end-time-point-not-mandatory</code></th><td>An event has ended; that is what makes it one.</td></tr><tr><td class="prop">natures</td><th><code>time-point-on-atemporal-owner</code></th><td>Only something in time begins and ends.</td></tr><tr><td class="prop">natures</td><th><code>mixin-without-changeable-instances</code></th><td>Semi-rigidity needs an instance that can stop being one and go on existing.</td></tr><tr><td class="prop">rigidity</td><th><code>essential-part-of-anti-rigid-whole</code></th><td>Under an anti-rigid whole the necessity is de dicto, so the part is immutable rather than essential.</td></tr><tr><td class="prop">rigidity</td><th><code>historical-role-specializes-anti-rigid</code></th><td>A historical role holds forever once it holds, so an anti-rigid type above it can never lapse.</td></tr><tr><td class="prop">sortality</td><th><code>constitution-within-one-kind</code></th><td>Constituent and constituted take identity from different ultimate sortals.</td></tr><tr><td class="prop">sortality</td><th><code>sortal-without-ultimate-sortal</code></th><td>Every sortal draws identity from exactly one ultimate sortal.</td></tr><tr><td class="prop">sortality</td><th><code>multiple-ultimate-sortals</code></th><td>Ultimate sortals are pairwise disjoint, so a lineage holds at most one.</td></tr><tr><td class="prop">taxonomy</td><th><code>role-without-relator</code></th><td>A role is anti-rigid because the relator founding it can cease to exist; if none is named, the type is probably a phase.</td></tr><tr><td class="prop">taxonomy</td><th><code>moment-without-bearer</code></th><td>Judged by nature and satisfied anywhere in the lineage, since a subtype inherits its bearer.</td></tr><tr><td class="prop">order</td><th><code>categorizer-not-higher-order</code></th><td>A categorizer’s instances are types, which is what <code>types</code> among the natures says.</td></tr></tbody></table></div>
+</section>
+
+<footer>Generated from <code>stereotype-model.ts</code> by asking it every pair, and from
+<code>tonto rules --json</code>. The principles are Guizzardi&rsquo;s (<i>Ontological Foundations for Structural
+Conceptual Models</i>, 2005, chapters 4 and 8), with the order rules from Carvalho &amp; Almeida&rsquo;s
+multi-level theory and the treatment of processes from Guarino &amp; Guizzardi (2024).</footer>
+</div>

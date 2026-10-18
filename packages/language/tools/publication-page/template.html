@@ -1,0 +1,358 @@
+<title>Publishing tonto ontologies</title>
+<style>
+/* Layout: one reading column; each stage pairs the files on disk with the terminal that checks them. */
+:root {
+  --ground:#F2F3F6; --surface:#FFFFFF; --sunk:#E9EBF0;
+  --ink:#1A1B26; --body:#363847; --muted:#5E6072; --faint:#8A8C9C;
+  --rule:#D8DAE2; --rule-soft:#E4E6EC;
+  --accent:#6A2C5A; --accent-soft:#F1E6EE;
+  --loc:#1F5E86; --loc-soft:#E3EEF5;
+  --term:#1E1F29; --term-ink:#E4E5EE; --term-dim:#9A9CB0; --term-ok:#8CC9A2; --term-bad:#F0A28F; --term-warn:#E2C07A;
+  --error:#A0362A; --warning:#80600E; --information:#2C5878; --hint:#5B5F6B;
+  --error-bg:#F7E9E7; --warning-bg:#F6EEDC; --information-bg:#E6EEF5; --hint-bg:#EBECEF;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#121319; --surface:#1A1B23; --sunk:#15161D;
+    --ink:#E8E8F0; --body:#C4C5D2; --muted:#9496A8; --faint:#6E7083;
+    --rule:#2B2D39; --rule-soft:#23242F;
+    --accent:#D79BC7; --accent-soft:#2C1F2A;
+    --loc:#86BFE3; --loc-soft:#18252F;
+    --term:#0D0E13; --term-ink:#E4E5EE; --term-dim:#8C8EA2; --term-ok:#8CC9A2; --term-bad:#F0A28F; --term-warn:#E2C07A;
+    --error:#E4907F; --warning:#D8AC55; --information:#84B2D6; --hint:#A0A5B0;
+    --error-bg:#2C1E1B; --warning-bg:#2A2418; --information-bg:#1A2530; --hint-bg:#23262A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#121319; --surface:#1A1B23; --sunk:#15161D;
+  --ink:#E8E8F0; --body:#C4C5D2; --muted:#9496A8; --faint:#6E7083;
+  --rule:#2B2D39; --rule-soft:#23242F;
+  --accent:#D79BC7; --accent-soft:#2C1F2A;
+  --loc:#86BFE3; --loc-soft:#18252F;
+  --term:#0D0E13; --term-ink:#E4E5EE; --term-dim:#8C8EA2; --term-ok:#8CC9A2; --term-bad:#F0A28F; --term-warn:#E2C07A;
+  --error:#E4907F; --warning:#D8AC55; --information:#84B2D6; --hint:#A0A5B0;
+  --error-bg:#2C1E1B; --warning-bg:#2A2418; --information-bg:#1A2530; --hint-bg:#23262A;
+  color-scheme:dark;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ground); color:var(--body);
+  font-family:var(--serif); font-size:16.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap { max-width:1120px; margin:0 auto; padding-inline:24px; padding-block:0 96px; }
+@media (max-width:520px) { .wrap { padding-inline:16px; } }
+a { color:var(--accent); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+b { color:var(--ink); font-weight:650; }
+p code, li code, td code, dd code {
+  font-family:var(--mono); font-size:.86em; color:var(--ink);
+  background:var(--sunk); border:1px solid var(--rule-soft); border-radius:2px; padding:0 4px;
+}
+code.url { color:var(--loc); background:var(--loc-soft); border-color:transparent; overflow-wrap:anywhere; }
+
+/* masthead */
+.mast { padding-block:64px 34px; border-bottom:1px solid var(--rule); }
+.eyebrow {
+  font-family:var(--sans); font-size:11px; font-weight:650; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 16px;
+}
+h1 {
+  font-family:var(--sans); font-weight:720; letter-spacing:-.024em; line-height:1.04; color:var(--ink);
+  font-size:clamp(2.1rem,5.2vw,3.4rem); margin:0 0 18px; text-wrap:balance;
+}
+.lede { font-size:1.12rem; max-width:64ch; margin:0 0 28px; }
+
+/* the route: a real sequence, so it is numbered */
+.route { list-style:none; margin:0; padding:0; counter-reset:stage; display:grid; gap:0;
+  border:1px solid var(--rule); border-radius:3px; background:var(--surface); }
+.route li { counter-increment:stage; display:grid; grid-template-columns:34px minmax(0,1fr) minmax(0,1.15fr); gap:6px 16px;
+  align-items:baseline; padding:12px 16px; border-bottom:1px solid var(--rule-soft); }
+.route li:last-child { border-bottom:0; }
+.route li::before { content:counter(stage); font-family:var(--sans); font-weight:700; font-size:13px; color:var(--accent); }
+.route a { font-family:var(--sans); font-weight:620; font-size:.97rem; color:var(--ink); text-decoration:none; }
+.route a:hover { color:var(--accent); }
+.route code { font-family:var(--mono); font-size:12.5px; color:var(--muted); overflow-wrap:anywhere; }
+@media (max-width:640px) {
+  .route li { grid-template-columns:26px minmax(0,1fr); }
+  .route code { grid-column:2; }
+}
+
+/* sections */
+section { padding-top:62px; scroll-margin-top:12px; }
+h2 {
+  font-family:var(--sans); font-size:1.55rem; font-weight:700; letter-spacing:-.018em; color:var(--ink);
+  margin:0 0 10px; text-wrap:balance; display:flex; gap:12px; align-items:baseline;
+}
+h2 .n { font-size:.8rem; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:3px 8px; border-radius:2px; }
+h3 { font-family:var(--sans); font-size:1.04rem; font-weight:670; color:var(--ink); margin:30px 0 8px; letter-spacing:-.01em; }
+.prose { max-width:68ch; }
+.prose p { margin:0 0 14px; }
+.prose ul { margin:0 0 14px; padding-left:20px; }
+.prose li { margin-bottom:6px; }
+.lbl {
+  font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--faint); margin:0 0 8px;
+}
+
+/* files and terminals side by side */
+.pair { display:grid; gap:18px; margin:18px 0 8px; }
+@media (min-width:900px) { .pair { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+.stack { display:grid; gap:12px; min-width:0; align-content:start; }
+figure.file { margin:0; min-width:0; background:var(--surface); border:1px solid var(--rule); border-radius:3px; }
+figure.file figcaption {
+  font-family:var(--mono); font-size:11.5px; color:var(--muted); padding:7px 12px; border-bottom:1px solid var(--rule-soft);
+  overflow-wrap:anywhere;
+}
+figure.file pre { margin:0; padding:12px 14px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.68; color:var(--ink); }
+figure.file code { font:inherit; white-space:pre; }
+.c-decl { color:var(--accent); font-weight:650; }
+.c-ster { color:var(--information); font-weight:650; }
+.c-mod { color:var(--muted); font-weight:600; }
+.c-mult { color:var(--faint); }
+.c-note { color:var(--faint); font-style:italic; }
+.c-loc { color:var(--loc); }
+.t-note { color:var(--faint); font-style:italic; }
+.t-str { color:var(--warning); }
+.t-iri { color:var(--loc); }
+.t-voc { color:var(--muted); }
+
+.term { min-width:0; background:var(--term); border-radius:3px; overflow:hidden; }
+.term pre { margin:0; padding:14px 16px; overflow-x:auto; font-family:var(--mono); font-size:12.3px; line-height:1.65; color:var(--term-ink); }
+.term code { font:inherit; white-space:pre; }
+.term .prompt { color:var(--term-dim); user-select:none; }
+.term .cmd { color:var(--term-ink); font-weight:650; }
+.term .exit { float:right; margin-left:16px; font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.term .exit.ok { color:var(--term-ok); }
+.term .exit.bad { color:var(--term-bad); }
+.term .o-error { color:var(--term-bad); }
+.term .o-warning { color:var(--term-warn); }
+
+/* three ways to own packages */
+.cases { display:grid; gap:12px; margin:18px 0 6px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+.case { background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:14px 16px; min-width:0; }
+.case h4 { font-family:var(--sans); font-size:.95rem; font-weight:670; color:var(--ink); margin:0 0 4px; }
+.case .when { font-family:var(--sans); font-size:12px; color:var(--accent); margin:0 0 8px; font-weight:600; }
+.case p { margin:0; font-size:.95rem; }
+
+/* hosting table */
+.tablewrap { overflow-x:auto; margin:16px 0; border:1px solid var(--rule); border-radius:3px; background:var(--surface); }
+table.host { border-collapse:collapse; width:100%; font-size:.93rem; }
+table.host th, table.host td { text-align:left; vertical-align:top; padding:10px 14px; border-bottom:1px solid var(--rule-soft); }
+table.host tr:last-child td { border-bottom:0; }
+table.host th { font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); border-bottom:1px solid var(--rule); }
+table.host td:first-child { white-space:nowrap; }
+
+.note { border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; margin:18px 0; border-radius:0 3px 3px 0; max-width:70ch; }
+.note p { margin:0; }
+
+/* diagnostics */
+.rules { list-style:none; margin:16px 0 0; padding:0; display:grid; gap:10px; }
+@media (min-width:900px) { .rules { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+.rule { background:var(--surface); border:1px solid var(--rule-soft); border-left:3px solid var(--rule); border-radius:2px; padding:11px 13px; min-width:0; }
+.rule.s-error { border-left-color:var(--error); }
+.rule.s-warning { border-left-color:var(--warning); }
+.rule.s-information { border-left-color:var(--information); }
+.rule.s-hint { border-left-color:var(--hint); }
+.rule-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin-bottom:6px; }
+.rid { font-family:var(--mono); font-size:12px; font-weight:650; color:var(--ink); overflow-wrap:anywhere; }
+.chip { font-family:var(--sans); font-size:9.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; padding:2px 7px; border-radius:2px; }
+.chip-error { color:var(--error); background:var(--error-bg); }
+.chip-warning { color:var(--warning); background:var(--warning-bg); }
+.chip-information { color:var(--information); background:var(--information-bg); }
+.chip-hint { color:var(--hint); background:var(--hint-bg); }
+.rule .msg { margin:0; font-family:var(--mono); font-size:12px; line-height:1.6; color:var(--body); overflow-wrap:anywhere; }
+
+.cmds { list-style:none; margin:12px 0 0; padding:0; display:grid; gap:8px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+.cmds li { background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:10px 14px; font-family:var(--sans); font-size:.92rem; }
+.cmds b { font-weight:620; }
+
+.links { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); margin:24px 0 0; padding:0; list-style:none; }
+.links a { display:block; background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:14px 16px; text-decoration:none; color:var(--body); height:100%; }
+.links a:hover { border-color:var(--accent); }
+.links b { display:block; font-family:var(--sans); color:var(--accent); margin-bottom:4px; }
+.links span { font-size:.93rem; }
+footer { margin-top:64px; padding-top:20px; border-top:1px solid var(--rule); font-family:var(--sans); font-size:12.5px; color:var(--faint); max-width:72ch; }
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <p class="eyebrow">tonto &middot; publication guide</p>
+  <h1>Publishing tonto ontologies</h1>
+  <p class="lede">A published tonto ontology is its source folder, put on the web where other models can import it, with the OWL beside it. There is no export step for the source: the <code>.tonto</code> files you check are the files you publish. This guide follows one ontology, <b>shop</b>, from a folder on disk to a verified release that depends on another ontology somebody else publishes.</p>
+  <ol class="route">
+    <li><a href="#ownership">Know what one ontology is</a><code>ontology shop</code></li>
+    <li><a href="#packages">Name the ontology and its packages</a><code>package sales in shop</code></li>
+    <li><a href="#dependency">Import another ontology by location</a><code>import people from &lt;https://…&gt;</code></li>
+    <li><a href="#mapping">Develop against a local copy</a><code>tonto.json</code></li>
+    <li><a href="#verify">Verify the release without mappings</a><code>tonto fetch --publication</code></li>
+    <li><a href="#export">Export the gUFO Turtle</a><code>tonto gufo shop.tonto --publication --write</code></li>
+    <li><a href="#host">Put the folder on the web</a><code>sources, Turtle, ontology IRI</code></li>
+    <li><a href="#refresh">Follow a dependency that changes</a><code>tonto fetch --publication --refresh</code></li>
+  </ol>
+</header>
+
+<section id="ownership">
+  <h2><span class="n">1</span>What one ontology is</h2>
+  <div class="prose">
+    <p>An <b>ontology</b> is the unit that is published: one namespace, one Turtle file, one version. Every class name is a public identifier of its ontology, so within one ontology a name is declared once, whichever package declares it. A <code>use</code> decides what a package can <i>see</i>; it never separates identities.</p>
+    <p>These words are used everywhere, in this guide, the diagnostics and the editor, each for one thing:</p>
+  </div>
+  <div class="tablewrap"><table class="host">
+    <thead><tr><th>Word</th><th>What it is</th><th>Looks like</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ontology</b></td><td>What is published and imported: one namespace, one version.</td><td><code>shop</code></td></tr>
+      <tr><td><b>Ontology file</b></td><td>The one file holding the ontology&rsquo;s header, which an import names.</td><td><code>shop.tonto</code></td></tr>
+      <tr><td><b>One-file ontology</b></td><td>An ontology file whose declarations follow the header, with no packages.</td><td><code>ontology shop</code>, then <code>kind Product</code></td></tr>
+      <tr><td><b>Package</b></td><td>A named part of one ontology. Packages are <i>used</i>, never imported.</td><td><code>use catalog</code></td></tr>
+      <tr><td><b>Package file</b></td><td>A file holding a package of its own, listed in the ontology file&rsquo;s <code>bundles</code>.</td><td><code>package sales in shop</code></td></tr>
+      <tr><td><b>Ontology import</b></td><td>A dependency on another ontology, by the location of its ontology file.</td><td><code>import people from &lt;…&gt;</code></td></tr>
+      <tr><td><b>Workspace</b></td><td>The folder checked together. It may hold several ontologies.</td><td>a project folder</td></tr>
+      <tr><td><b><code>tonto.json</code></b></td><td>The workspace&rsquo;s optional settings file: its location mappings redirect import locations. It never makes files one ontology.</td><td><code>{ "locations": { … } }</code></td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">A file says what it is in its first line:</p>
+  <div class="cases">
+    <div class="case"><h4>One file</h4><p class="when">ontology shop, then declarations</p><p>A one-file ontology: the declarations after the header are the whole ontology. This is how the starter model begins, and needs no package.</p></div>
+    <div class="case"><h4>Packages</h4><p class="when">ontology shop bundles &hellip;</p><p>An ontology file with packages: written under the header, or bundled from package files of their own. Each package file starts <code>package core in shop</code>, and it and the ontology file must agree.</p></div>
+    <div class="case"><h4>No header</h4><p class="when">package &hellip; and no ontology</p><p>An error: every package belongs to an ontology a document declares. The repairs make it a one-file ontology, write a header above it, or bundle it into an existing ontology file. A folder, a shared namespace or a <code>tonto.json</code> never makes one.</p></div>
+  </div>
+  <h3>Two ontologies in one folder</h3>
+  <p class="prose">Each file is a whole ontology with a namespace of its own, so both may declare <code>Person</code>:</p>
+  <div class="pair"><div class="stack">{{LOOSE_FILES}}</div>{{LOOSE}}</div>
+  <h3>A member its ontology does not list</h3>
+  <p class="prose"><code>in shop</code> says which ontology a package belongs to; the ontology file has the last word. A package that claims a membership the ontology file does not confirm is an error, and its quick fix adds the bundle entry to the ontology file:</p>
+  <div class="pair"><div class="stack">{{MEMBERS_FILES}}</div>{{MEMBERS}}</div>
+</section>
+
+<section id="packages">
+  <h2><span class="n">2</span>Name the ontology and its packages</h2>
+  <div class="prose">
+    <p>Most ontologies begin as one file: <code>ontology shop</code> followed by its declarations. When it outgrows the file, run <b>tonto: New Package&hellip;</b>, or put the cursor on the <code>ontology</code> line and choose <b>Split &ldquo;shop&rdquo; into an ontology file and package &ldquo;core&rdquo;</b>. Either way the declarations move to <code>core.tonto</code>, which starts <code>package core in shop</code>, and the header stays where it was, with its documentation and namespace: <code>shop.tonto</code> is still the ontology file. No IRI changes. New Package&hellip; then writes the new package&rsquo;s file and its bundle entry, together, and does the same for every package after it.</p>
+    <p>An ontology file with <code>bundles</code> names the packages the ontology bundles and the file each one is in, and its documentation carries the ontology&rsquo;s metadata. The namespace is the ontology&rsquo;s public identity: a hash namespace (ending in <code>#</code>) is required for publication. The packages it bundles carry no namespace of their own; they publish into the ontology&rsquo;s.</p>
+  </div>
+  <div class="pair"><div class="stack">{{SHOP_FILES}}</div>
+    <div class="prose">
+      <p class="lbl">What to notice</p>
+      <ul>
+        <li>Each bundle entry is a package name and the location of the file that declares it, relative to the ontology file. The package files stay where they are.</li>
+        <li>Each package file says which ontology it belongs to: <code>package sales in shop</code>. Publication refuses a bundled package that does not say so, and a package that says so but is not bundled.</li>
+        <li>Ontology names, package names and import aliases are lowercase.</li>
+        <li><code>sales</code> refers to <code>catalog</code> with <code>use catalog</code>, because both belong to <b>shop</b>. <code>import catalog</code> would be an error, with a fix that rewrites it: packages are used, ontologies imported.</li>
+        <li><code>sales</code> imports <b>people</b> by location, because it belongs to someone else. The alias <code>people</code> qualifies its names: <code>people.Person</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="dependency">
+  <h2><span class="n">3</span>Import another ontology by location</h2>
+  <div class="prose">
+    <p>The <b>people</b> ontology is published at <code class="url">https://example.org/people/people.tonto</code>. Its importer names that location; it never names a package that lives in another ontology. A <code>use</code> across that boundary is refused with <code>cross-ontology-package-use</code>, which says which location import to write instead. The location is always an ontology&rsquo;s ontology file, never one of its package files.</p>
+    <p>Checking never touches the network. Until the document is on this machine, the import is reported, and the ontology that imports it is checked only for names and ownership, so nothing is reported as though <code>people</code> were absent:</p>
+  </div>
+  <div class="pair">{{PEOPLE}}{{UNMAPPED}}</div>
+</section>
+
+<section id="mapping">
+  <h2><span class="n">4</span>Develop against a local copy</h2>
+  <div class="prose">
+    <p>While both ontologies are being developed, point the published location at a local folder. A mapping substitutes the source of a document without changing the import that names it, so the model keeps saying what it will say once published.</p>
+  </div>
+  <div class="pair">{{MAPPING}}{{MAPPED}}</div>
+  <div class="prose">
+    <ul>
+      <li>A key ending in <code>/</code> maps every location beneath it, and its value must end in <code>/</code> as well. The longest matching key wins.</li>
+      <li>A relative value is resolved against the folder holding <code>tonto.json</code>. Here <code>../people/</code> is a sibling checkout.</li>
+      <li>A local target inside the workspace is checked like your own files; one outside it is read-only.</li>
+      <li>Only your own <code>tonto.json</code> is read. A dependency&rsquo;s <code>tonto.json</code> is never consulted.</li>
+      <li>A malformed file or entry is reported on the workspace&rsquo;s first file, and the valid entries beside it still apply. <code>--locations='{…}'</code> supplies the same mappings on the command line.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="verify">
+  <h2><span class="n">5</span>Verify the release without mappings</h2>
+  <div class="prose">
+    <p>A release must check against what its importers will actually read: the published documents. <code>--publication</code> switches every mapping off, so the local copy no longer stands in. <code>tonto fetch --publication</code> is the only command that goes to the network. It retrieves the whole dependency closure into {{CACHE}} in one step, and checking then reads it from there, offline:</p>
+  </div>
+  {{VERIFY}}
+  <div class="prose">
+    <p>The cache records, for each document, where it was requested, where it was actually fetched from after redirects, when, and a SHA-256 digest of its content. A cached document does not change until you ask for a refresh. Development and publication keep separate caches. The cache is local state: keep <code>.tonto/</code> out of version control and out of the published folder.</p>
+  </div>
+</section>
+
+<section id="export">
+  <h2><span class="n">6</span>Export the gUFO Turtle</h2>
+  <div class="prose">
+    <p>Every export of an ontology is written beside its ontology file, named after the ontology. The gUFO export is one Turtle file per ontology, here <code>shop.ttl</code> beside <code>shop.tonto</code>. <code>--publication</code> exports only after the same unmapped verification succeeds. The dependency stays where it is: <b>shop</b> refers to <code>people:Person</code> by its own IRI and imports its ontology, and nothing of <b>people</b> is copied into <b>shop</b>.</p>
+  </div>
+  <div class="pair">{{EXPORT}}{{TURTLE}}</div>
+</section>
+
+<section id="host">
+  <h2><span class="n">7</span>Put the folder on the web</h2>
+  <div class="prose">
+    <p>Publish the source files at the locations their importers will use, keeping their relative layout, since the ontology file names its packages by relative location. The Turtle is already beside the ontology file, so the folder goes up as it is. For <b>shop</b> on <code class="url">https://example.org/</code>:</p>
+  </div>
+  <div class="tablewrap"><table class="host">
+    <thead><tr><th>Address</th><th>Serve</th><th>Read by</th></tr></thead>
+    <tbody>
+      <tr><td><code class="url">https://example.org/shop/shop.tonto</code></td><td><code>shop.tonto</code></td><td>tonto models that <code>import shop from &lt;…/shop.tonto&gt;</code></td></tr>
+      <tr><td><code class="url">https://example.org/shop/catalog/products.tonto</code></td><td><code>catalog/products.tonto</code></td><td>tonto, following the ontology file</td></tr>
+      <tr><td><code class="url">https://example.org/shop/sales/orders.tonto</code></td><td><code>sales/orders.tonto</code></td><td>tonto, following the ontology file</td></tr>
+      <tr><td><code class="url">https://example.org/shop/shop.ttl</code></td><td><code>shop.ttl</code></td><td>People and tools that want the OWL</td></tr>
+      <tr><td><code class="url">https://example.org/shop</code></td><td>the Turtle, or a redirect to <code>shop.ttl</code></td><td>RDF tools following <code>owl:imports</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="prose">
+    <p>The last row is the ontology IRI: the namespace without its <code>#</code>. It names the ontology, not a file, and RDF tools that follow <code>owl:imports &lt;https://example.org/shop&gt;</code> expect Turtle there.</p>
+    <ul>
+      <li><b>A host that serves extensionless files with a configurable content type</b> (S3, for example) can serve the Turtle at the ontology IRI directly, with <code>Content-Type: text/turtle</code>.</li>
+      <li><b>A host that serves a folder of files</b> cannot have both a file <code>shop</code> and a folder <code>shop/</code>. Configure a redirect from the ontology IRI to the <code>.ttl</code> instead: on the host, or through a persistent-identifier service such as w3id.org or a PURL server. A persistent identifier also lets the files move later without changing the IRI.</li>
+      <li>No content negotiation is needed. tonto importers name the <code>.tonto</code> location; RDF clients ask for the ontology IRI.</li>
+      <li>Do not rewrite locations while copying. If the files must move, keep their relative layout, or update the locations in the source and check again.</li>
+    </ul>
+  </div>
+  <div class="note"><p>Once published, a location is an address other models depend on. Changing the namespace changes every IRI in the ontology; changing a document&rsquo;s location breaks every import that names it. Publish a new release at a new location, and leave the old one where it is.</p></div>
+</section>
+
+<section id="refresh">
+  <h2><span class="n">8</span>Follow a dependency that changes</h2>
+  <div class="prose">
+    <p>When <b>people</b> publishes a change, nothing happens on your side until you ask for it. A refresh retrieves the closure again, all of it or none of it, and says which documents changed, which are new, and which are no longer needed:</p>
+  </div>
+  {{REFRESH}}
+  <div class="prose">
+    <p>A fetch over the whole workspace also drops documents that no import needs any more. A fetch of some files keeps them, since other files may still need them. If a refresh fails part way, the previous documents stay in use.</p>
+  </div>
+</section>
+
+<section id="diagnostics">
+  <h2><span class="n">9</span>What the checker reports on the way</h2>
+  <p class="prose">Each of these is the message the checker emits for the example in the <a href="https://claude.ai/artifact/2t1skM8rYPkxjGML1oy2yX">validation rules</a> reference, where its full model and rationale are.</p>
+  <ul class="rules">{{DIAGNOSTICS}}</ul>
+</section>
+
+<section id="tools">
+  <h2><span class="n">10</span>In the editor, and for agents</h2>
+  <div class="prose">
+    <p>Checking, completion, hover and export in VS Code never go to the network either; retrieval is always a command you run. The Command Palette has:</p>
+  </div>
+  <ul class="cmds">{{COMMANDS}}</ul>
+  <div class="prose" style="margin-top:18px">
+    <p>A document from the cache opens read-only, and go to definition follows a bundle entry or a location import to the file it names. Agents get the same operations: the MCP server&rsquo;s <code>tonto_fetch</code> tool and a <code>publication</code> option on checking and export, and the API&rsquo;s <code>TontoSession({ workspace, locations, publication })</code> with <code>fetch</code>, <code>validateFiles</code> and <code>gufoFiles</code>.</p>
+  </div>
+  <ul class="links">
+    <li><a href="https://claude.ai/artifact/TGgXBgAnRAFhCvanTtasiN"><b>tonto from scratch</b><span>The one-hour introduction: a model built step by step.</span></a></li>
+    <li><a href="https://claude.ai/artifact/2t1skM8rYPkxjGML1oy2yX"><b>Validation rules</b><span>Every diagnostic, with a model that triggers it and its repairs.</span></a></li>
+    <li><a href="https://claude.ai/artifact/LYrvhHz71q9ETqKmx8MrB2"><b>Pattern catalog</b><span>Validated modeling patterns from UFO, MLT and gUFO.</span></a></li>
+  </ul>
+</section>
+
+<footer>Built from the files shown. Each command was run on them when this page was built, with the network answered by a stand-in for the people ontology&rsquo;s host, and the output on the page is the tools&rsquo; own.</footer>
+</div>

@@ -1,0 +1,54 @@
+{
+    "name": "tonto-language",
+    "version": "0.1.0",
+    "description": "Langium-based language implementation for tonto (OntoUML/UFO textual DSL): grammar, AST, validation, and LSP services.",
+    "license": "MIT",
+    "type": "module",
+    "main": "out/index.js",
+    "types": "out/index.d.ts",
+    "exports": {
+        ".": "./out/index.js",
+        "./guide": "./out/cli/guide.js",
+        "./rules": "./out/cli/rules.js",
+        "./patterns": "./out/cli/patterns.js",
+        "./tables": "./out/cli/tables.js",
+        "./cli": "./out/cli/index.js",
+        "./tools": "./out/tools.js",
+        "./agent-hook": "./out/agent-hook.js"
+    },
+    "bin": {
+        "tonto": "./bin/tonto.js",
+        "tonto-language-server": "./bin/language-server.js"
+    },
+    "files": [
+        "out",
+        "bin",
+        "src"
+    ],
+    "scripts": {
+        "clean": "shx rm -rf out",
+        "prebuild": "npm run clean && npm run langium:generate",
+        "build": "tsc -b tsconfig.json",
+        "watch": "concurrently -n langium,tsc -c blue,green \"npm run langium:watch\" \"tsc -b tsconfig.json --watch\"",
+        "langium:generate": "langium generate",
+        "langium:watch": "langium generate --watch",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "eslint src test"
+    },
+    "dependencies": {
+        "chevrotain": "~12.0.0",
+        "langium": "~4.3.1",
+        "vscode-languageserver": "~10.0.1",
+        "vscode-uri": "^3.0.8"
+    },
+    "devDependencies": {
+        "concurrently": "^9.0.1",
+        "eslint": "^9.14.0",
+        "langium-cli": "~4.3.0",
+        "shx": "^0.3.4",
+        "typescript": "^5.6.0",
+        "typescript-eslint": "^8.15.0",
+        "vitest": "^2.1.4"
+    }
+}

@@ -1,0 +1,166 @@
+<title>tonto pattern catalog</title>
+<style>
+:root {
+  --ground:#F5F3EF; --surface:#FFFFFF; --sunk:#EFECE6;
+  --ink:#1B1B24; --body:#3A3A47; --muted:#63636F; --faint:#8E8E98;
+  --rule:#E2DDD4; --rule-soft:#EAE6DE;
+  --accent:#3A3E8C; --accent-soft:#E7E7F3;
+  --mark:#9C4A22; --mark-soft:#F5EAE3;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#131318; --surface:#1A1A21; --sunk:#16161C;
+    --ink:#EAEAF0; --body:#C6C6D0; --muted:#9797A3; --faint:#70707C;
+    --rule:#2C2C36; --rule-soft:#24242C;
+    --accent:#9EA3F0; --accent-soft:#1E1F33;
+    --mark:#E09A70; --mark-soft:#2B211B;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#131318; --surface:#1A1A21; --sunk:#16161C;
+  --ink:#EAEAF0; --body:#C6C6D0; --muted:#9797A3; --faint:#70707C;
+  --rule:#2C2C36; --rule-soft:#24242C;
+  --accent:#9EA3F0; --accent-soft:#1E1F33;
+  --mark:#E09A70; --mark-soft:#2B211B;
+}
+
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ground); color:var(--body);
+  font-family:var(--serif); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap { max-width:1180px; margin:0 auto; padding:0 24px 96px; }
+
+header.top { padding:64px 0 36px; border-bottom:1px solid var(--rule); }
+.eyebrow {
+  font-family:var(--sans); font-size:11px; font-weight:650; letter-spacing:.17em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 16px;
+}
+h1 {
+  font-family:var(--sans); font-weight:700; letter-spacing:-.023em; line-height:1.04;
+  font-size:clamp(2.1rem,5vw,3.3rem); color:var(--ink); margin:0 0 16px; text-wrap:balance;
+}
+.lede { font-size:1.08rem; max-width:64ch; margin:0 0 26px; color:var(--body); }
+.counts { display:flex; flex-wrap:wrap; gap:34px; margin:0; padding:0; list-style:none; }
+.counts div { min-width:96px; }
+.counts b {
+  display:block; font-family:var(--sans); font-size:1.5rem; font-weight:700;
+  color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em;
+}
+.counts span {
+  font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--muted);
+}
+
+.layout { display:grid; grid-template-columns:210px minmax(0,1fr); gap:52px; margin-top:44px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; gap:28px; } .rail { position:static !important; } }
+.rail { position:sticky; top:24px; align-self:start; }
+.rail p {
+  font-family:var(--sans); font-size:10.5px; font-weight:700; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 12px;
+}
+.rail ul { list-style:none; margin:0; padding:0; }
+.rail a {
+  display:flex; justify-content:space-between; gap:10px; padding:6px 0;
+  font-family:var(--sans); font-size:13.5px; color:var(--body); text-decoration:none;
+  border-bottom:1px solid var(--rule-soft);
+}
+.rail a:hover, .rail a:focus-visible { color:var(--accent); }
+.rail .n { color:var(--faint); font-variant-numeric:tabular-nums; }
+
+.group { margin-bottom:64px; scroll-margin-top:20px; }
+.group-head { margin-bottom:26px; }
+.group-head h2 {
+  font-family:var(--sans); font-size:1.35rem; font-weight:680; letter-spacing:-.015em;
+  color:var(--ink); margin:0 0 8px;
+}
+.group-why { margin:0; color:var(--muted); max-width:70ch; font-size:.97rem; }
+
+.plate {
+  background:var(--surface); border:1px solid var(--rule); border-radius:3px;
+  padding:22px 24px; margin-bottom:18px; scroll-margin-top:20px;
+}
+.plate-head { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:16px; align-items:baseline; margin-bottom:16px; }
+.plate-no {
+  font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.08em;
+  color:var(--accent); background:var(--accent-soft); padding:3px 7px; border-radius:2px;
+  font-variant-numeric:tabular-nums;
+}
+.plate h3 {
+  font-family:var(--sans); font-size:1.08rem; font-weight:670; letter-spacing:-.012em;
+  color:var(--ink); margin:0 0 5px;
+}
+.intent { margin:0; color:var(--body); }
+.handle {
+  font-family:var(--mono); font-size:11.5px; color:var(--muted);
+  background:var(--sunk); border:1px solid var(--rule-soft); padding:2px 7px; border-radius:2px;
+  white-space:nowrap;
+}
+@media (max-width:640px) {
+  .plate-head { grid-template-columns:auto minmax(0,1fr); }
+  .handle { grid-column:1 / -1; justify-self:start; }
+}
+
+.scroll { overflow-x:auto; }
+pre.model {
+  margin:0 0 15px; padding:14px 16px; background:var(--sunk);
+  border:1px solid var(--rule-soft); border-radius:2px;
+  font-family:var(--mono); font-size:12.5px; line-height:1.68; color:var(--ink);
+  white-space:pre;
+}
+.c-decl { color:var(--accent); font-weight:600; }
+.c-ster { color:var(--mark); font-weight:600; }
+.c-mult { color:var(--muted); }
+.c-mod  { color:var(--body); font-weight:600; }
+.c-note { color:var(--faint); font-style:italic; }
+
+.note {
+  margin:0 0 14px; padding-left:14px; border-left:2px solid var(--mark);
+  color:var(--body);
+}
+.unclean {
+  margin:0 0 14px; padding:8px 12px; background:var(--mark-soft); border-radius:2px;
+  font-family:var(--mono); font-size:12px; color:var(--mark);
+}
+.source {
+  margin:0; font-family:var(--sans); font-size:11.5px; letter-spacing:.02em; color:var(--muted);
+}
+code {
+  font-family:var(--mono); font-size:.88em; background:var(--sunk);
+  border:1px solid var(--rule-soft); border-radius:2px; padding:1px 4px; color:var(--ink);
+}
+.note code, .intent code { background:none; border:0; padding:0; }
+em { color:var(--ink); }
+footer {
+  margin-top:8px; padding-top:22px; border-top:1px solid var(--rule);
+  font-family:var(--sans); font-size:12.5px; color:var(--muted); max-width:70ch;
+}
+a { color:var(--accent); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">tonto &middot; OntoUML / UFO</p>
+  <h1>The pattern catalog</h1>
+  <p class="lede">{{LEDE}}</p>
+  <div class="counts">{{COUNTS}}</div>
+</header>
+
+<div class="layout">
+  <nav class="rail" aria-label="Groups">
+    <p>Groups</p>
+    <ul>{{RAIL}}</ul>
+  </nav>
+  <main>
+{{GROUPS}}
+  <footer>Generated from <code>tonto patterns --json</code>, which validates every model as it prints it.
+    Sources are named per pattern; the readings behind them are Guizzardi (2005), Guizzardi et al. (2013, 2018),
+    Carvalho &amp; Almeida (2016), Odell (1994), Cardelli (1988), and the gUFO vocabulary.</footer>
+  </main>
+</div>
+</div>

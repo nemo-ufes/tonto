@@ -1,0 +1,385 @@
+<title>tonto from Scratch</title>
+<style>
+/* Layout: a single reading column for the story, widening to code-beside-notes for each step of the build. */
+:root {
+  --ground:#F1F4F4; --surface:#FFFFFF; --sunk:#E8EDED;
+  --ink:#122226; --body:#31454A; --muted:#5A6D72; --faint:#8898A0;
+  --rule:#D3DDDE; --rule-soft:#E2E9EA;
+  --accent:#1B5864; --accent-soft:#DFEBED;
+  --added:#1B5864; --added-bg:#E4EFF0;
+  --error:#A0362A; --warning:#80600E; --information:#2C5878; --hint:#5B5F6B;
+  --error-bg:#F7E9E7; --warning-bg:#F6EEDC; --information-bg:#E6EEF5; --hint-bg:#EBECEF;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0F1618; --surface:#162023; --sunk:#111A1C;
+    --ink:#E3ECEE; --body:#BFCDD0; --muted:#8FA2A6; --faint:#687B80;
+    --rule:#26363A; --rule-soft:#1F2D30;
+    --accent:#76C3CF; --accent-soft:#182D32;
+    --added:#76C3CF; --added-bg:#15292D;
+    --error:#E4907F; --warning:#D8AC55; --information:#84B2D6; --hint:#A0A5B0;
+    --error-bg:#2C1E1B; --warning-bg:#2A2418; --information-bg:#1A2530; --hint-bg:#23262A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0F1618; --surface:#162023; --sunk:#111A1C;
+  --ink:#E3ECEE; --body:#BFCDD0; --muted:#8FA2A6; --faint:#687B80;
+  --rule:#26363A; --rule-soft:#1F2D30;
+  --accent:#76C3CF; --accent-soft:#182D32;
+  --added:#76C3CF; --added-bg:#15292D;
+  --error:#E4907F; --warning:#D8AC55; --information:#84B2D6; --hint:#A0A5B0;
+  --error-bg:#2C1E1B; --warning-bg:#2A2418; --information-bg:#1A2530; --hint-bg:#23262A;
+  color-scheme:dark;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ground); color:var(--body);
+  font-family:var(--serif); font-size:16.5px; line-height:1.6; -webkit-font-smoothing:antialiased;
+}
+.wrap { max-width:1140px; margin:0 auto; padding-inline:24px; padding-block:0 96px; }
+@media (max-width:520px) { .wrap { padding-inline:16px; } }
+a { color:var(--accent); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+code { font-family:var(--mono); font-size:.86em; color:var(--ink); }
+p code, li code, dd code { background:var(--sunk); border:1px solid var(--rule-soft); border-radius:2px; padding:0 4px; }
+b { color:var(--ink); font-weight:650; }
+
+/* masthead */
+.mast { padding-block:64px 36px; border-bottom:1px solid var(--rule); }
+.eyebrow {
+  font-family:var(--sans); font-size:11px; font-weight:650; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 16px;
+}
+h1 {
+  font-family:var(--sans); font-weight:720; letter-spacing:-.024em; line-height:1.03; color:var(--ink);
+  font-size:clamp(2.2rem,5.4vw,3.5rem); margin:0 0 18px; text-wrap:balance;
+}
+.lede { font-size:1.12rem; max-width:62ch; margin:0 0 22px; }
+.needs { display:flex; flex-wrap:wrap; gap:8px 22px; margin:0; padding:0; list-style:none; font-family:var(--sans); font-size:13px; color:var(--muted); }
+.needs b { font-weight:650; color:var(--ink); }
+
+/* sections */
+section { padding-top:60px; scroll-margin-top:12px; }
+h2 {
+  font-family:var(--sans); font-size:1.55rem; font-weight:700; letter-spacing:-.018em; color:var(--ink);
+  margin:0 0 10px; text-wrap:balance;
+}
+.intro { max-width:66ch; margin:0 0 26px; }
+.lbl {
+  font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--faint); margin:0 0 8px;
+}
+
+/* agenda */
+.agenda { list-style:none; margin:0; padding:0; border-top:1px solid var(--rule); counter-reset:part; }
+.agenda li {
+  display:grid; grid-template-columns:92px 28px minmax(0,1fr); gap:14px; align-items:baseline;
+  padding:12px 0; border-bottom:1px solid var(--rule-soft); counter-increment:part;
+}
+.agenda .t { font-family:var(--mono); font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.agenda li::before { content:counter(part); grid-column:2; grid-row:1; font-family:var(--sans); font-weight:700; font-size:13px; color:var(--accent); }
+.agenda .t { grid-column:1; grid-row:1; }
+.agenda .what { grid-column:3; grid-row:1; min-width:0; }
+.agenda .what b { font-family:var(--sans); font-size:.98rem; display:block; margin-bottom:2px; }
+.agenda .what span { color:var(--muted); font-size:.95rem; }
+.agenda li.core .what b::after {
+  content:"most of the hour"; margin-left:10px; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--accent); background:var(--accent-soft); padding:2px 6px; border-radius:2px;
+  vertical-align:2px;
+}
+@media (max-width:560px) {
+  .agenda li { grid-template-columns:24px minmax(0,1fr); gap:4px 10px; }
+  .agenda li::before { grid-column:1; grid-row:1 / span 2; }
+  .agenda .t { grid-column:2; grid-row:2; }
+  .agenda .what { grid-column:2; grid-row:1; }
+}
+
+/* legend */
+.legend { display:flex; flex-wrap:wrap; gap:10px 22px; margin:0 0 24px; padding:0; list-style:none; font-family:var(--sans); font-size:12.5px; color:var(--muted); }
+.legend li { display:flex; align-items:center; gap:8px; }
+.key-add { width:14px; height:14px; background:var(--added-bg); border-left:3px solid var(--added); }
+.key-sq { text-decoration:underline wavy; text-underline-offset:3px; font-family:var(--mono); color:var(--ink); }
+
+/* steps */
+.step { background:var(--surface); border:1px solid var(--rule); border-radius:3px; padding:22px 24px; margin-bottom:18px; }
+@media (max-width:520px) { .step { padding:18px 14px; } }
+.step-head { display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
+.step-no {
+  font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--accent); background:var(--accent-soft); padding:3px 8px; border-radius:2px; white-space:nowrap;
+}
+.step h3 { font-family:var(--sans); font-size:1.12rem; font-weight:670; letter-spacing:-.01em; color:var(--ink); margin:0; }
+.step-grid { display:grid; gap:22px; }
+@media (min-width:880px) { .step-grid { grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); } }
+.pane { min-width:0; }
+.notes { display:flex; flex-direction:column; }
+.notes .lbl:not(:first-child) { margin-top:16px; }
+.doing { margin:0; padding-left:18px; }
+.doing li { margin-bottom:4px; }
+.idea { margin:0; padding-left:14px; border-left:2px solid var(--accent); }
+.silent { margin:0; font-family:var(--sans); font-size:13.5px; color:var(--accent); }
+
+/* code */
+.codebox { position:relative; }
+pre.src {
+  margin:0; padding:12px 0; background:var(--sunk); border:1px solid var(--rule-soft); border-radius:2px;
+  overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.7; color:var(--body);
+}
+pre.src code { font:inherit; color:inherit; display:block; min-width:max-content; }
+.ln { display:flex; padding-right:16px; border-left:3px solid transparent; }
+.ln.add { background:var(--added-bg); border-left-color:var(--added); }
+.no { width:2.6em; padding-right:12px; text-align:right; color:var(--faint); user-select:none; flex:none; font-variant-numeric:tabular-nums; }
+.tx { white-space:pre; }
+pre.ttl { padding:12px 16px; }
+pre.ttl code { white-space:pre; }
+.c-decl { color:var(--accent); font-weight:650; }
+.c-ster { color:var(--information); font-weight:650; }
+.c-mod { color:var(--muted); font-weight:600; }
+.c-mult { color:var(--faint); }
+.c-note { color:var(--faint); font-style:italic; }
+.t-voc { color:var(--muted); }
+.t-own { color:var(--accent); font-weight:600; }
+.t-kw { color:var(--information); font-weight:650; }
+.t-str { color:var(--warning); }
+.sq { text-decoration:underline wavy; text-underline-offset:4px; text-decoration-thickness:1.5px; }
+.sq-error { text-decoration-color:var(--error); }
+.sq-warning { text-decoration-color:var(--warning); }
+.sq-information { text-decoration-color:var(--information); }
+.sq-hint { text-decoration-color:var(--hint); text-decoration-style:dotted; }
+.copy {
+  position:absolute; top:6px; right:6px; z-index:1; font-family:var(--sans); font-size:11px; font-weight:600;
+  color:var(--muted); background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:3px 9px; cursor:pointer;
+}
+.copy:hover { color:var(--accent); border-color:var(--accent); }
+
+/* diagnostics */
+.diags { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.diag { border:1px solid var(--rule-soft); border-left:3px solid var(--rule); border-radius:2px; padding:10px 12px; background:var(--surface); min-width:0; }
+.diag.s-error { border-left-color:var(--error); }
+.diag.s-warning { border-left-color:var(--warning); }
+.diag.s-information { border-left-color:var(--information); }
+.diag.s-hint { border-left-color:var(--hint); }
+.diag-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin-bottom:6px; }
+.chip {
+  font-family:var(--sans); font-size:9.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  padding:2px 7px; border-radius:2px;
+}
+.chip-error { color:var(--error); background:var(--error-bg); }
+.chip-warning { color:var(--warning); background:var(--warning-bg); }
+.chip-information { color:var(--information); background:var(--information-bg); }
+.chip-hint { color:var(--hint); background:var(--hint-bg); }
+.rid { font-size:12px; font-weight:600; overflow-wrap:anywhere; }
+.where { font-family:var(--sans); font-size:11.5px; color:var(--faint); }
+.msg { margin:0; font-family:var(--mono); font-size:12.2px; line-height:1.6; color:var(--ink); overflow-wrap:anywhere; }
+.fixes-lbl { margin:8px 0 3px; font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+.fixes { margin:0; padding-left:18px; font-family:var(--mono); font-size:11.8px; color:var(--body); }
+.auto { font-family:var(--sans); font-size:10.5px; font-weight:600; color:var(--accent); margin-left:6px; white-space:nowrap; }
+
+/* two-up blocks */
+.pair { display:grid; gap:22px; }
+@media (min-width:880px) { .pair { grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+.result { margin:14px 0 0; font-family:var(--mono); font-size:12.5px; color:var(--ink); background:var(--accent-soft); border-radius:2px; padding:8px 12px; overflow-x:auto; white-space:pre; }
+.aside { margin:18px 0 0; max-width:70ch; }
+.notes-list { list-style:none; margin:12px 0 0; padding:0; display:grid; gap:8px; font-size:.95rem; }
+.notes-list li { display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+
+/* patterns */
+.groups { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); margin:0; padding:0; list-style:none; }
+.groups li { background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:12px 14px; min-width:0; }
+.groups b { font-family:var(--sans); display:flex; justify-content:space-between; gap:8px; font-size:.93rem; margin-bottom:4px; }
+.groups b span { color:var(--faint); font-weight:600; font-variant-numeric:tabular-nums; }
+.groups p { margin:0; font-family:var(--mono); font-size:11.5px; color:var(--muted); line-height:1.55; overflow-wrap:anywhere; }
+
+/* glossary */
+.gloss { display:grid; gap:0; margin:0; border-top:1px solid var(--rule); }
+.gloss div { display:grid; grid-template-columns:190px minmax(0,1fr); gap:16px; padding:11px 0; border-bottom:1px solid var(--rule-soft); }
+@media (max-width:620px) { .gloss div { grid-template-columns:1fr; gap:2px; } }
+.gloss dt { font-family:var(--mono); font-size:13px; font-weight:650; color:var(--accent); }
+.gloss dd { margin:0; max-width:66ch; }
+.sev { display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); margin:22px 0 0; padding:0; list-style:none; }
+.sev li { background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:12px 14px; font-size:.95rem; }
+.sev .chip { display:inline-block; margin-bottom:6px; }
+
+/* commands */
+.cmds { width:100%; border-collapse:collapse; font-size:.95rem; }
+.cmds th, .cmds td { text-align:left; vertical-align:top; padding:10px 12px 10px 0; border-bottom:1px solid var(--rule-soft); }
+.cmds th { font-family:var(--sans); font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); border-bottom:1px solid var(--rule); }
+.cmds td:first-child { font-family:var(--sans); font-weight:620; color:var(--ink); white-space:nowrap; }
+.tablewrap { overflow-x:auto; }
+.links { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); margin:26px 0 0; padding:0; list-style:none; }
+.links a { display:block; background:var(--surface); border:1px solid var(--rule); border-radius:2px; padding:14px 16px; text-decoration:none; color:var(--body); height:100%; }
+.links a:hover { border-color:var(--accent); }
+.links b { display:block; font-family:var(--sans); color:var(--accent); margin-bottom:4px; }
+.links span { font-size:.93rem; }
+footer { margin-top:64px; padding-top:20px; border-top:1px solid var(--rule); font-family:var(--sans); font-size:12.5px; color:var(--faint); max-width:72ch; }
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <p class="eyebrow">tonto &middot; a one-hour introduction</p>
+  <h1>tonto from scratch</h1>
+  <p class="lede">tonto is OntoUML written as text. You write a conceptual model the way you write code, and an editor that knows the Unified Foundational Ontology (UFO) checks it as you type: it tells you what is wrong, why, and how to repair it. This page follows the demonstration: the agenda, the model we build one step at a time, and where to go next.</p>
+  <ul class="needs"><li><b>Editor</b> Visual Studio Code 1.95 or later</li><li><b>Extension</b> tonto, installed from a VSIX file</li><li><b>Nothing else</b> no Node.js, no command line</li></ul>
+</header>
+
+<section id="agenda">
+  <h2>The hour</h2>
+  <p class="intro">We build one small model from nothing and let the editor do most of the teaching. The UFO vocabulary is explained at the moment it appears.</p>
+  <ol class="agenda">
+    <li><span class="t">0&ndash;5</span><div class="what"><b>Why tonto</b><span>A finished model first, so you know where we are heading. Text can be diffed, reviewed and versioned, and written by people and by AI agents.</span></div></li>
+    <li><span class="t">5&ndash;9</span><div class="what"><b>Getting started</b><span>The Get Started walkthrough, a first one-file ontology, and the language guide generated from the rules themselves.</span></div></li>
+    <li class="core"><span class="t">9&ndash;27</span><div class="what"><b>Building a model</b><span>People, the stages of a life, students, enrollments and graduations, in the six steps below.</span></div></li>
+    <li><span class="t">27&ndash;33</span><div class="what"><b>How the checks work</b><span>What an error, a warning and a hint each claim; quick fixes, and the repairs applied without asking.</span></div></li>
+    <li><span class="t">33&ndash;39</span><div class="what"><b>Patterns</b><span>Inserting a validated modeling pattern, with its names linked so a rename carries through.</span></div></li>
+    <li><span class="t">39&ndash;46</span><div class="what"><b>A closer look</b><span>One of: events and processes, types whose instances are types, or parts and what things are made of.</span></div></li>
+    <li><span class="t">46&ndash;50</span><div class="what"><b>Models across files</b><span>Ontologies and packages, <code>use</code> and imports, go to definition, find references and rename across files; when several files are one ontology, and how one is published.</span></div></li>
+    <li><span class="t">50&ndash;55</span><div class="what"><b>From the model to OWL</b><span>Exporting to gUFO, the OWL implementation of UFO, as Turtle.</span></div></li>
+    <li><span class="t">55&ndash;58</span><div class="what"><b>Working with an agent</b><span>Codex or Claude Code extending the model, checked by the same validator.</span></div></li>
+    <li><span class="t">58&ndash;60</span><div class="what"><b>Questions</b><span></span></div></li>
+  </ol>
+</section>
+
+<section id="build">
+  <h2>Building a model, step by step</h2>
+  <p class="intro">Each step shows the whole file at that point, what the editor reports, and the idea the step is about. Every message and repair below is the validator&rsquo;s own output for the file beside it. Copy any step into a <code>.tonto</code> file to follow along.</p>
+  <ul class="legend">
+    <li><span class="key-add" aria-hidden="true"></span>added in this step</li>
+    <li><span class="key-sq" style="text-decoration-color:var(--error)">range</span>what a diagnostic points at, in its severity&rsquo;s color</li>
+  </ul>
+  {{STEPS}}
+</section>
+
+<section id="checks">
+  <h2>{{MISTAKE_COUNT}} problems, one command</h2>
+  <p class="intro">Severity is a claim about certainty. An <b>error</b> means no instance could satisfy the model. A <b>warning</b> means it is almost certainly not what you meant. A <b>hint</b> means the model could say more, and need not. Most diagnostics come with repairs. Some decide nothing, such as fixing a typo or swapping bounds written the wrong way round; <code>tonto check --fix</code> applies those, and the editor offers them as quick fixes. The others are choices between readings of the model, and those are left to you.</p>
+  <div class="pair">
+    <div class="pane">
+      <p class="lbl">A file with mistakes in it</p>
+      {{MISTAKES}}
+    </div>
+    <div class="pane">
+      <p class="lbl">What the editor says</p>
+      {{MISTAKE_DIAGS}}
+    </div>
+  </div>
+  <div class="pair" style="margin-top:22px">
+    <div class="pane">
+      <p class="lbl">After <code>tonto check --fix</code></p>
+      {{FIXED}}
+      <p class="result">{{FIX_SUMMARY}}</p>
+    </div>
+    <div class="pane">
+      <p class="lbl">What happened</p>
+      <p class="aside" style="margin-top:0">Five repairs, and nothing left to report. The other two problems went away because of repairs made elsewhere: once <code>@mediaton</code> is spelled <code>@mediation</code>, the enrollment mediates two things instead of one, and <code>Student</code> has a relator behind it.</p>
+      <p class="aside">A repair makes the model well-formed, not right. The swapped bounds now say a university has between two and five enrollments, which is valid and almost certainly not what anyone meant. That part is still yours.</p>
+    </div>
+  </div>
+</section>
+
+<section id="patterns">
+  <h2>Patterns you can insert</h2>
+  <p class="intro">Put the cursor on an empty line at the top level of an ontology or package and run <b>tonto: Insert Modeling Pattern&hellip;</b>. The catalog has {{PATTERN_COUNT}} patterns drawn from UFO, the multi-level theory MLT and gUFO. Each one is the smallest model that shows its pattern, and each passes the validator with no diagnostics at all. The domain names in an inserted pattern are linked, so renaming a declaration renames its uses.</p>
+  <ul class="groups">{{PATTERN_GROUPS}}</ul>
+</section>
+
+<section id="export">
+  <h2>From the model to OWL</h2>
+  <p class="intro">Run <b>tonto: Export to gUFO&hellip;</b>. The command checks the ontology with everything it imports and asks once for the namespace. It then saves that namespace in the ontology&rsquo;s header, so the next export does not ask again, writes the Turtle beside the ontology file and opens it. With several ontologies in the workspace, it lists them, all checked, and Enter exports each beside its own file. Here is the finished model from step {{FINAL_STEP}}, and three of the resources exported from it.</p>
+  <div class="pair">
+    <div class="pane">
+      <p class="lbl">The model</p>
+      {{FINAL}}
+    </div>
+    <div class="pane">
+      <p class="lbl">Part of the Turtle</p>
+      {{TURTLE}}
+    </div>
+  </div>
+  <p class="aside">The role becomes a class that exists only with an enrollment behind it. <code>studiesAt</code> records the relator it is derived from, and a property chain says the same thing to a reasoner: a student studies at a university when an enrollment mediates both. <code>Graduate</code> is defined by what it is derived from: a person who, as a student, graduated. A role cannot be defined by its relator that way, since an enrollment that has ended stays in the data and would go on making a former student a student; a historical role&rsquo;s members grow exactly as the events it is derived from do. Where gUFO cannot say something the model says, the gUFO export reports it instead of dropping it silently:</p>
+  <ul class="notes-list">{{EXPORT_NOTES}}</ul>
+</section>
+
+<section id="agents">
+  <h2>Working with an agent</h2>
+  <p class="intro">Run <b>tonto: Set Up Codex and Claude in Workspace</b>. It adds project instructions and configures a local MCP server, the Model Context Protocol server that lets an agent call tools, so Codex or Claude Code can read the language guide and check a model. They also get the same repairs you use. An agent that writes tonto is checked by the validator you just watched, so a model it proposes comes with the diagnostics it would raise. The extension ships its own runtime, so there is nothing else to install.</p>
+</section>
+
+<section id="words">
+  <h2>Words you will hear</h2>
+  <p class="intro">The UFO vocabulary behind the steps above, in the order it appears.</p>
+  <dl class="gloss">
+    <div><dt>kind</dt><dd>A type that supplies the identity of its instances, such as <code>Person</code>. An instance is of exactly one kind for as long as it exists.</dd></div>
+    <div><dt>phase</dt><dd>A stage an instance passes through because of a change in the instance itself: <code>Child</code>, <code>Adult</code>.</dd></div>
+    <div><dt>generalization set</dt><dd>A statement about several specializations at once. <code>disjoint</code>: nothing is in two of them. <code>complete</code>: everything is in one of them. Written <code>genset</code>.</dd></div>
+    <div><dt>role</dt><dd>A type an instance has only while it stands in a relationship: someone is a <code>Student</code> while enrolled.</dd></div>
+    <div><dt>relator</dt><dd>The relationship made into a thing, such as an <code>Enrollment</code>. It is what founds a role, and where properties such as a start date belong.</dd></div>
+    <div><dt>@mediation</dt><dd>The link from a relator to what it binds. The relator cannot exist without them.</dd></div>
+    <div><dt>@material</dt><dd>A relation people name, such as <code>studiesAt</code>, true because a relator holds. <code>derivedFrom</code> says which relator.</dd></div>
+    <div><dt>event</dt><dd>Something that happened, such as a <code>Graduation</code>. Once over, nothing about it changes.</dd></div>
+    <div><dt>historical role</dt><dd>A role that holds forever once it holds, because of an event: a <code>Graduate</code> never stops being one. <code>derivedFrom</code> names the participation, creation or termination it is derived from.</dd></div>
+    <div><dt>@participation</dt><dd>The link from something that takes part in an event to the event.</dd></div>
+    <div><dt>[1..*] (const) (addOnly)</dt><dd>Multiplicity says how many are linked at each end. <code>const</code> says the link cannot change; <code>addOnly</code> says links may be added and never removed.</dd></div>
+  </dl>
+  <ul class="sev">
+    <li><span class="chip chip-error">Error</span><br>The model contradicts itself: nothing could be an instance of it as written.</li>
+    <li><span class="chip chip-warning">Warning</span><br>Defensible, but almost certainly not what you meant.</li>
+    <li><span class="chip chip-information">Information</span><br>Anti-patterns known to correlate with modeling errors. Off unless you turn them on.</li>
+    <li><span class="chip chip-hint">Hint</span><br>The model could say more, and need not. A faint underline, kept out of the Problems panel.</li>
+  </ul>
+</section>
+
+<section id="try">
+  <h2>Try it yourself</h2>
+  <p class="intro">While tonto is in preview it is distributed as a VSIX file. In VS Code, open the Extensions view, choose <b>Install from VSIX&hellip;</b> from its <b>&hellip;</b> menu, and select the file. The Get Started walkthrough opens by itself. Everything the extension does is in the Command Palette under <b>tonto:</b>.</p>
+  <div class="tablewrap"><table class="cmds">
+    <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Get Started</td><td>Reopens the walkthrough: a first ontology, language guide, validation, export, agents.</td></tr>
+      <tr><td>New Ontology&hellip;</td><td>Asks for an ontology name and writes a one-file ontology that validates; in a folder not yet set up for coding agents, sets them up too.</td></tr>
+      <tr><td>New Package&hellip;</td><td>Adds a package to one of the workspace&rsquo;s ontologies: its package file and its entry in the ontology file, splitting a one-file ontology first.</td></tr>
+      <tr><td>Open Language Guide</td><td>Every stereotype, nature and association on one page, generated from the tables the validator uses.</td></tr>
+      <tr><td>Insert Modeling Pattern&hellip;</td><td>Inserts a validated pattern at the cursor, with linked names.</td></tr>
+      <tr><td>Export to gUFO&hellip;</td><td>Checks the workspace&rsquo;s ontologies and writes each as gUFO-aligned Turtle beside its ontology file.</td></tr>
+      <tr><td>Export to gUFO with Snapshot Layer&hellip;</td><td>Also writes what holds at a single instant, and SHACL shapes to check a graph of current state against.</td></tr>
+      <tr><td>Fetch Ontology Dependencies</td><td>Retrieves the ontologies the workspace imports by location, into its <code>.tonto</code> cache. Checking itself never goes to the network.</td></tr>
+      <tr><td>Refresh Ontology Dependencies</td><td>Retrieves them again, replacing the cached copies.</td></tr>
+      <tr><td>Set Up Codex and Claude in Workspace</td><td>Project instructions and MCP configuration for coding agents.</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="links">
+    <li><a href="https://claude.ai/artifact/2t1skM8rYPkxjGML1oy2yX"><b>Validation rules</b><span>Every diagnostic the editor reports, with a model that triggers it, its message and its repairs.</span></a></li>
+    <li><a href="https://claude.ai/artifact/LYrvhHz71q9ETqKmx8MrB2"><b>Pattern catalog</b><span>The {{PATTERN_COUNT}} patterns, each with what it is for and where it comes from.</span></a></li>
+    <li><a href="https://claude.ai/artifact/5BBsCwTjm8dZQzkDJTYJPt"><b>Publishing ontologies</b><span>From a source folder to the web: ontology files, packages, imports by location, verification and hosting.</span></a></li>
+  </ul>
+</section>
+
+<footer>Built from the demonstration&rsquo;s model files. Each file was run through the tonto validator and exporter when this page was built, and the messages, repairs and Turtle shown are their output, not a paraphrase.</footer>
+</div>
+
+<script>
+document.addEventListener('click', event => {
+  const button = event.target.closest('.copy');
+  if (!button) return;
+  const text = button.dataset.src;
+  const done = label => { button.textContent = label; setTimeout(() => { button.textContent = 'Copy'; }, 1600); };
+  const select = () => {
+    const code = button.parentElement.querySelector('code');
+    const range = document.createRange();
+    range.selectNodeContents(code);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    done('Selected');
+  };
+  try {
+    navigator.clipboard.writeText(text).then(() => done('Copied'), select);
+  } catch (error) {
+    select();
+  }
+});
+</script>

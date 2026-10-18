@@ -1,0 +1,24 @@
+name: gUFO conformance
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gufo-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download ROBOT 1.9.10
+        run: |
+          curl -fL https://github.com/ontodev/robot/releases/download/v1.9.10/robot.jar -o "$RUNNER_TEMP/robot.jar"
+          echo '16a73c074f3df359a7338a84b4e0788785fe06117f931bb9796e9619ea776105  '"$RUNNER_TEMP/robot.jar" | sha256sum --check
+      - name: Check every pattern with OWLAPI and HermiT
+        run: npm run test:gufo-conformance
+        env:
+          ROBOT_JAR: ${{ runner.temp }}/robot.jar

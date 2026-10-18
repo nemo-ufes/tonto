@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+  <uri name="http://purl.org/nemo/gufo#" uri="gufo-1.0.0.ttl"/>
+</catalog>

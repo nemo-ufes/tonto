@@ -1,0 +1,27 @@
+{
+    "name": "tonto-mcp",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Model Context Protocol server for the tonto modeling language: validate, repair, and look up what a rule means.",
+    "license": "MIT",
+    "type": "module",
+    "bin": {
+        "tonto-mcp": "./bin/tonto-mcp.js"
+    },
+    "files": ["out", "bin"],
+    "scripts": {
+        "clean": "shx rm -rf out",
+        "prebuild": "npm run clean",
+        "build": "tsc -b tsconfig.json",
+        "lint": "eslint src"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.30.0",
+        "tonto-language": "*",
+        "zod": "^3.23.8"
+    },
+    "devDependencies": {
+        "shx": "^0.3.4",
+        "typescript": "^5.6.0"
+    }
+}

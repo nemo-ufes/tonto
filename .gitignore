@@ -1,0 +1,18 @@
+node_modules/
+out/
+*.tsbuildinfo
+*.vsix
+.vscode-test/
+.DS_Store
+.tonto/
+packages/language/src/generated/
+packages/extension/syntaxes/tonto.tmLanguage.json
+
+# Papers are read from here, not redistributed from here: they are other
+# people's publications, under their own licenses.
+docs/*.pdf
+packages/language/tools/rules-page/rules.html
+packages/language/tools/patterns-page/patterns.html
+packages/language/tools/type-level-page/type-level.html
+packages/language/tools/handout-page/handout.html
+packages/language/tools/publication-page/publication.html

@@ -1,0 +1,710 @@
+{
+    "name": "tonto-vscode",
+    "displayName": "tonto",
+    "version": "0.1.62+20261017202133",
+    "private": true,
+    "description": "tonto (OntoUML/UFO textual DSL) language support and gUFO/OWL export.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jpalmeida/tontoredesign.git"
+    },
+    "type": "module",
+    "publisher": "tonto-redesign",
+    "categories": [
+        "Programming Languages"
+    ],
+    "keywords": [
+        "tonto",
+        "ontouml",
+        "ufo",
+        "ontology",
+        "langium"
+    ],
+    "engines": {
+        "vscode": "^1.95.0"
+    },
+    "main": "./out/extension.cjs",
+    "activationEvents": [
+        "workspaceContains:**/*.tonto"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "tonto",
+                "aliases": [
+                    "tonto"
+                ],
+                "extensions": [
+                    ".tonto"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "configurationDefaults": {
+            "[tonto]": {
+                "editor.wordBasedSuggestions": "off"
+            }
+        },
+        "grammars": [
+            {
+                "language": "tonto",
+                "scopeName": "source.tonto",
+                "path": "./syntaxes/tonto.tmLanguage.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "tonto.fetchOntologies",
+                "title": "Fetch Ontology Dependencies",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.refreshOntologies",
+                "title": "Refresh Ontology Dependencies",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.getStarted",
+                "title": "Get Started",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.newOntology",
+                "title": "New Ontology...",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.newPackage",
+                "title": "New Package...",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.openGuide",
+                "title": "Open Language Guide",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.insertPattern",
+                "title": "Insert Modeling Pattern...",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.addAgentInstructions",
+                "title": "Set Up Codex and Claude in Workspace",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.exportGufo",
+                "title": "Export to gUFO...",
+                "category": "Tonto"
+            },
+            {
+                "command": "tonto.exportGufoSnapshot",
+                "title": "Export to gUFO with Snapshot Layer...",
+                "category": "Tonto"
+            }
+        ],
+        "walkthroughs": [
+            {
+                "id": "tonto.getStarted",
+                "title": "Get started with tonto",
+                "description": "Create, validate, review, and export an ontology model with the editor or an agent.",
+                "steps": [
+                    {
+                        "id": "tonto.getStarted.create",
+                        "title": "Open a folder or create an ontology",
+                        "description": "A tonto project is an ordinary folder containing `.tonto` files; it needs no configuration file.\n[Create an ontology](command:tonto.newOntology) · [Open an existing folder](command:workbench.action.files.openFolder)",
+                        "media": {
+                            "markdown": "media/walkthrough/create.md"
+                        },
+                        "completionEvents": [
+                            "onCommand:tonto.newOntology",
+                            "onCommand:workbench.action.files.openFolder"
+                        ]
+                    },
+                    {
+                        "id": "tonto.getStarted.guide",
+                        "title": "Read the language before modeling",
+                        "description": "The guide is generated from the same tables as the validator, so its stereotypes and relation signatures stay current.\n[Open the tonto language guide](command:tonto.openGuide)",
+                        "media": {
+                            "markdown": "media/walkthrough/guide.md"
+                        },
+                        "completionEvents": [
+                            "onCommand:tonto.openGuide"
+                        ]
+                    },
+                    {
+                        "id": "tonto.getStarted.validate",
+                        "title": "Validate and repair as you write",
+                        "description": "Diagnostics appear automatically. Open Problems, then use **Quick Fix** where tonto can offer a concrete repair.\n[Show Problems](command:workbench.actions.view.problems)",
+                        "media": {
+                            "markdown": "media/walkthrough/validate.md"
+                        },
+                        "completionEvents": [
+                            "onCommand:workbench.actions.view.problems"
+                        ]
+                    },
+                    {
+                        "id": "tonto.getStarted.export",
+                        "title": "Export the model to gUFO/OWL",
+                        "description": "With a saved `.tonto` file active, validate the complete model and generate deterministic gUFO-aligned Turtle.\n[Export the active model](command:tonto.exportGufo)",
+                        "media": {
+                            "markdown": "media/walkthrough/export.md"
+                        },
+                        "completionEvents": [
+                            "onCommand:tonto.exportGufo"
+                        ]
+                    },
+                    {
+                        "id": "tonto.getStarted.agent",
+                        "title": "Work with Codex, Claude, or another agent",
+                        "description": "Install project instructions and the bundled tonto MCP server for Codex and Claude Code, then start new chats. The first connection requires project trust or MCP approval.\n[Set up Codex and Claude](command:tonto.addAgentInstructions) · [Open Chat](command:workbench.action.chat.open)",
+                        "media": {
+                            "markdown": "media/walkthrough/agent.md"
+                        },
+                        "completionEvents": [
+                            "onCommand:tonto.addAgentInstructions",
+                            "onCommand:workbench.action.chat.open"
+                        ]
+                    }
+                ]
+            }
+        ],
+        "languageModelTools": [
+            {
+                "name": "tonto_guide",
+                "displayName": "The tonto language in one page",
+                "toolReferenceName": "tontoGuide",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "The tonto language in one page",
+                "modelDescription": "Read before writing tonto, or when unsure which stereotype, nature or association fits. The language in one page, generated from the tables the validator reads: every stereotype and what it classifies, the principles that decide specialization, every association signature, and ontologies, packages and files.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "tonto_validate",
+                "displayName": "Validate a tonto model",
+                "toolReferenceName": "tontoValidate",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Validate a tonto model",
+                "modelDescription": "Run after every edit, and before saying a model is valid. Checks a model given as text or as files and returns each diagnostic: position, stable code, message and repairs by title (take one with tonto_apply; tonto_rules says what a code means). With neither source nor paths, it is about the active tonto file, or else the open workspace. Anti-patterns (RelOver, RepRel, DepPhase and the rest) are reported when the tonto.antiPatterns setting is on.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        },
+                        "paths": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Files or directories, relative to the workspace, instead of source."
+                        },
+                        "publication": {
+                            "type": "boolean",
+                            "description": "Check the unmapped publication closure, offline."
+                        },
+                        "locations": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "description": "Location mappings, over the workspace's tonto.json."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "tonto_repair",
+                "displayName": "Apply the repairs the rules force",
+                "toolReferenceName": "tontoRepair",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Apply the repairs the rules force",
+                "modelDescription": "Use to clear the mechanical problems in one step. Returns the model with every repair applied that its rule offers alone, and the diagnostics left. Where a rule offers a choice nothing is written: choosing is modeling, done with tonto_apply. Never writes files.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        }
+                    },
+                    "required": [
+                        "source"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_apply",
+                "displayName": "Apply one repair, by title",
+                "toolReferenceName": "tontoApply",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Apply one repair, by title",
+                "modelDescription": "Use to take one repair after tonto_validate, above all where a rule offers several: the choice is a modeling decision, so say which and why. Name the code, the repair title, and the line and column where the code is reported more than once, as tonto_validate gives them. Returns the revised model and what is left; refuses to guess. Never writes files.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        },
+                        "code": {
+                            "type": "string",
+                            "description": "The diagnostic code, e.g. add-only-with-nothing-to-add."
+                        },
+                        "title": {
+                            "type": "string",
+                            "description": "The repair title, where the rule offers more than one."
+                        },
+                        "line": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "One-based line of the occurrence, where the code is reported more than once."
+                        },
+                        "column": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "One-based column, where it is reported twice on one line."
+                        }
+                    },
+                    "required": [
+                        "source",
+                        "code"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_diff",
+                "displayName": "What an edit did to a model",
+                "toolReferenceName": "tontoDiff",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "What an edit did to a model",
+                "modelDescription": "Use after editing a model, to tell whether the edit was a step backwards. Validates the model before and after and says which diagnostics the edit introduced, resolved and left.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "before": {
+                            "type": "string",
+                            "description": "The model as it was."
+                        },
+                        "after": {
+                            "type": "string",
+                            "description": "The model as it is now."
+                        }
+                    },
+                    "required": [
+                        "before",
+                        "after"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_complete",
+                "displayName": "What may be written here",
+                "toolReferenceName": "tontoComplete",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "What may be written here",
+                "modelDescription": "Use instead of guessing what belongs at a position: the classes a relation end admits given its stereotype and the other end, the ends a class may subset, the stereotypes it could take. Returns the proposals an editor would offer. Line and character count from 0.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text, as far as it is written."
+                        },
+                        "line": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Zero-based line of the cursor."
+                        },
+                        "character": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Zero-based character of the cursor."
+                        }
+                    },
+                    "required": [
+                        "source",
+                        "line",
+                        "character"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_digest",
+                "displayName": "A model read for review",
+                "toolReferenceName": "tontoDigest",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "A model read for review",
+                "modelDescription": "Use to review a model, rather than reading its text: the ultimate sortals and what hangs off each, what every relator binds, the relations by stereotype, the generalization sets, and the hints -- what the model has not said yet. Use tonto_ast for the tree itself.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        }
+                    },
+                    "required": [
+                        "source"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_hold",
+                "displayName": "Hold a file beside the draft",
+                "toolReferenceName": "tontoHold",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Hold a file beside the draft",
+                "modelDescription": "Use while drafting a model of several files that are not on disk yet: a held file is one that later calls resolve against, named as a path without \".tonto\" relative to the other held files (an ontology file held as \"shop\" that bundles \"sales from <sales/orders.tonto>\" finds a package file held as \"sales/orders\"). Returns the held file's own diagnostics. Omit source to release a file; omit name to list what is held.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "What to call the file. Omit to list what is held."
+                        },
+                        "source": {
+                            "type": "string",
+                            "description": "The file as text. Omit to release the named one."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "tonto_format",
+                "displayName": "Lay a model out canonically",
+                "toolReferenceName": "tontoFormat",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Lay a model out canonically",
+                "modelDescription": "Use before handing a model back, so its diffs stay small. Returns the model with indented bodies, normalized spacing and one declaration per line, keeping the author's blank lines. Never writes files.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        }
+                    },
+                    "required": [
+                        "source"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_ast",
+                "displayName": "The parsed model as JSON",
+                "toolReferenceName": "tontoAst",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "The parsed model as JSON",
+                "modelDescription": "Use for exact questions about structure -- counting declarations, finding classes that lack something, checking a convention the validator does not encode. Returns the syntax tree as JSON, each declaration with its /// documentation as $documentation; refused for a model with errors.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        }
+                    },
+                    "required": [
+                        "source"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_rules",
+                "displayName": "What a diagnostic means",
+                "toolReferenceName": "tontoRules",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "What a diagnostic means",
+                "modelDescription": "Use with a diagnostic code before repairing it. Returns the rule: why it exists, the smallest model that trips it, its message and its repairs. Without a code, every rule.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "code": {
+                            "type": "string",
+                            "description": "A diagnostic code, e.g. parthood-crosses-natures."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "tonto_patterns",
+                "displayName": "The modeling patterns",
+                "toolReferenceName": "tontoPatterns",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "The modeling patterns",
+                "modelDescription": "Use before inventing the shape of a model: a role and the relator that founds it, parthood, events, multi-level types. Returns validated patterns from the UFO and multi-level literature and gUFO, each a small model with what it is for and what is easy to get wrong. Name one to get only that one.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "A pattern name, e.g. \"role-and-relator\". Omit for all."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "tonto_explain",
+                "displayName": "Ask the language a question",
+                "toolReferenceName": "tontoExplain",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Ask the language a question",
+                "modelDescription": "Use to settle a question without writing a model: may one class stereotype specialize another, and if not which principle refuses it; or, for an association stereotype written with its \"@\", what it relates and whether it may run between two natures.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "subject": {
+                            "type": "string",
+                            "description": "A class stereotype, or an association stereotype as \"@membership\"."
+                        },
+                        "object": {
+                            "type": "string",
+                            "description": "The stereotype it would specialize, or the source nature."
+                        },
+                        "target": {
+                            "type": "string",
+                            "description": "For an association, the target nature."
+                        }
+                    },
+                    "required": [
+                        "subject"
+                    ]
+                }
+            },
+            {
+                "name": "tonto_tables",
+                "displayName": "The reference tables",
+                "toolReferenceName": "tontoTables",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "The reference tables",
+                "modelDescription": "Use only for a question tonto_explain and tonto_guide do not answer. Returns, as JSON, the tables the checks read: what each class stereotype classifies, which may specialize which, what each association stereotype admits at each end, and the parthood pairs.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "tonto_ontologies",
+                "displayName": "The ontologies of the workspace",
+                "toolReferenceName": "tontoOntologies",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "The ontologies of the workspace",
+                "modelDescription": "Use to find out what a workspace holds before exporting or adding to it. Returns each ontology it authors: name, ontology file, namespace if its header gives one, and how many errors it has. Dependencies and unbundled packages are not listed.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
+            {
+                "name": "tonto_gufo",
+                "displayName": "Export to gUFO",
+                "toolReferenceName": "tontoGufo",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Export to gUFO",
+                "modelDescription": "Use to preview or regenerate an ontology's gUFO-aligned OWL. Checks the model and returns its Turtle, one document per ontology, or nothing when anything has an error. With paths, write puts each <name>.ttl beside its ontology file, as the editor's gUFO export does, and outDir puts them in one workspace directory instead. Edit the .tonto source, never the Turtle. With neither source nor paths, it is about the active tonto file, or else the open workspace.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "description": "The model as text."
+                        },
+                        "paths": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Files or directories, relative to the workspace, instead of source."
+                        },
+                        "write": {
+                            "type": "boolean",
+                            "description": "Write each ontology's Turtle beside its ontology file. Needs paths."
+                        },
+                        "outDir": {
+                            "type": "string",
+                            "description": "A workspace-relative directory to write into instead. Needs paths."
+                        },
+                        "namespaceIri": {
+                            "type": "string",
+                            "description": "The exact namespace, ending in # or /, for the one exported ontology whose header has none; as \"/// @namespace\"."
+                        },
+                        "snapshot": {
+                            "type": "boolean",
+                            "description": "Also write the snapshot layer and its SHACL shapes, for a graph of current state."
+                        },
+                        "directSpecializations": {
+                            "type": "boolean",
+                            "description": "Also write the direct rdfs:subClassOf triples gufoshapes reads without inference."
+                        },
+                        "publication": {
+                            "type": "boolean",
+                            "description": "Check the unmapped publication closure, offline."
+                        },
+                        "locations": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "description": "Location mappings, over the workspace's tonto.json."
+                        }
+                    }
+                }
+            },
+            {
+                "name": "tonto_fetch",
+                "displayName": "Retrieve the imported ontologies",
+                "toolReferenceName": "tontoFetch",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Retrieve the imported ontologies",
+                "modelDescription": "Use when validation reports an import that is not cached: checking never goes to the network, and this is the one call that does. Retrieves the ontology files the model imports by location, and the package files they bundle, into the workspace's .tonto cache. refresh replaces them all.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "paths": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "Ontology files or directories whose dependencies to retrieve."
+                        },
+                        "refresh": {
+                            "type": "boolean",
+                            "description": "Retrieve everything again, replacing the cached copies."
+                        },
+                        "publication": {
+                            "type": "boolean",
+                            "description": "Retrieve the original locations, ignoring the mappings."
+                        },
+                        "locations": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "description": "Location mappings, over the workspace's tonto.json."
+                        }
+                    },
+                    "required": [
+                        "paths"
+                    ]
+                }
+            }
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "tonto.newOntology",
+                    "when": "explorerResourceIsFolder",
+                    "group": "navigation@20"
+                },
+                {
+                    "command": "tonto.newPackage",
+                    "when": "explorerResourceIsFolder && workspaceFolderCount > 0",
+                    "group": "navigation@21"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "tonto.newPackage",
+                    "when": "workspaceFolderCount > 0"
+                },
+                {
+                    "command": "tonto.insertPattern",
+                    "when": "editorLangId == tonto"
+                },
+                {
+                    "command": "tonto.exportGufo",
+                    "when": "workspaceFolderCount > 0"
+                },
+                {
+                    "command": "tonto.exportGufoSnapshot",
+                    "when": "workspaceFolderCount > 0"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "tonto.newPackage",
+                    "when": "editorLangId == tonto && resourceScheme == file",
+                    "group": "navigation@8"
+                },
+                {
+                    "command": "tonto.insertPattern",
+                    "when": "editorLangId == tonto",
+                    "group": "navigation@9"
+                },
+                {
+                    "command": "tonto.exportGufo",
+                    "when": "editorLangId == tonto && resourceScheme == file",
+                    "group": "navigation@10"
+                },
+                {
+                    "command": "tonto.exportGufoSnapshot",
+                    "when": "editorLangId == tonto && resourceScheme == file",
+                    "group": "navigation@11"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "tonto",
+            "properties": {
+                "tonto.antiPatterns": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Report the OntoUML anti-patterns (Sales & Guizzardi 2015): `BinOver`, `ImpAbs`, `RelSpec`, `RelOver`, `RepRel`, `AssocCyc`, `DepPhase`, `MixIden` and `HetColl`.\n\nThese are not errors. They describe structures that parse and validate but are often a mistake, and on a large model they fire often enough to bury the diagnostics that are not advisory. Off by default; turn them on when auditing a model."
+                },
+                "tonto.gufo.directSpecializations": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "When exporting to gUFO, also write the direct `rdfs:subClassOf` triples that [gUFO shapes](https://github.com/nemo-ufes/gufoshapes) look for without inference: a base sortal to its nearest sortal ancestor, and an instance of a categorizer to the type it categorizes.\n\nOWL reasoning already entails them, so they add no meaning; they only let a SHACL validator that does not reason accept the export. Off by default."
+                },
+                "tonto.gufo.snapshot": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "When exporting to gUFO, also write the snapshot layer: beside each ontology, a module (`sales.snapshot.ttl`) that imports it and adds what holds of the world at any one instant but not over a whole history -- the upper bounds on ends that can change, and the disjointness of phases.\n\nFor a graph of current state, which retracts what stops being true. The ontologies themselves are unchanged. Off by default."
+                },
+                "tonto.agents.setUpOnCreate": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "When **New Ontology...** creates an ontology in a folder that has no agent setup, also set up Codex and Claude there: the tonto block in `AGENTS.md`, `CLAUDE.md`, the tonto MCP server in `.mcp.json` and `.codex/config.toml`, and Claude Code's hook that validates each edit in `.claude/settings.json`. A folder already set up is left as it is. Turn off if you do not use coding agents."
+                }
+            }
+        }
+    },
+    "files": [
+        "LICENSE",
+        "media",
+        "out",
+        "templates",
+        "language-configuration.json",
+        "syntaxes"
+    ],
+    "scripts": {
+        "clean": "shx rm -rf out",
+        "prebuild": "npm run clean",
+        "build": "tsc --noEmit && node esbuild.mjs",
+        "watch": "node esbuild.mjs --watch",
+        "tools:sync": "node sync-tools.mjs",
+        "test:integration": "node test/run.mjs",
+        "package": "node bump-version.mjs && npm run build && vsce package --no-dependencies -o tonto.vsix && node name-vsix.mjs"
+    },
+    "dependencies": {
+        "tonto-language": "0.1.0",
+        "vscode-languageclient": "^10.1.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.95.0",
+        "@vscode/test-electron": "^3.1.0",
+        "@vscode/vsce": "^4.0.0",
+        "esbuild": "^0.28.1",
+        "mocha": "^12.0.3",
+        "shx": "^0.3.4",
+        "typescript": "^5.6.0"
+    }
+}

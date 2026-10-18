@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // F5. Builds everything first, so the language server the host
+            // launches is always the code currently on disk.
+            "name": "Run Extension",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/extension"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/extension/out/**/*.cjs"
+            ],
+            "preLaunchTask": "Build extension"
+        },
+        {
+            // Skips the build. Only correct while the "Watch" task is running;
+            // otherwise the server is whatever was last built.
+            "name": "Run Extension (no build)",
+            "type": "extensionHost",
+            "request": "launch",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/extension"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/packages/extension/out/**/*.cjs"
+            ]
+        }
+    ]
+}
