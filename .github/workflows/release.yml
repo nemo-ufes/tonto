@@ -1,20 +1,33 @@
 name: Release tonto
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing signed release tag, for example v0.9.0
+        required: true
+        type: string
+      publish_npm:
+        description: Publish the CLI package to npm
+        required: true
+        default: false
+        type: boolean
+      publish_marketplace:
+        description: Publish the extension to the VS Code Marketplace
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
   release:
-    name: Verify and publish all artifacts
+    name: Verify, package, and release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,6 +36,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag }}
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -32,7 +46,7 @@ jobs:
         env:
           RELEASE_SIGNING_PUBLIC_KEY: ${{ secrets.RELEASE_SIGNING_PUBLIC_KEY }}
           RELEASE_SIGNING_FINGERPRINT: ${{ vars.RELEASE_SIGNING_FINGERPRINT }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           test -n "$RELEASE_SIGNING_PUBLIC_KEY" || { echo "Set the RELEASE_SIGNING_PUBLIC_KEY repository secret."; exit 1; }
           test -n "$RELEASE_SIGNING_FINGERPRINT" || { echo "Set the RELEASE_SIGNING_FINGERPRINT repository variable."; exit 1; }
@@ -43,7 +57,9 @@ jobs:
           git verify-tag "$RELEASE_TAG"
       - run: npm ci
       - name: Check lockstep versions and tag
-        run: npm run versions:check -- "$GITHUB_REF_NAME"
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: npm run versions:check -- "$RELEASE_TAG"
       - run: npm run build
       - run: npm test
       - run: npm run lint
@@ -52,18 +68,17 @@ jobs:
       - name: Pack and install the CLI outside the workspace
         run: npm run test:package --workspace=tonto-language
       - name: Create the npm package artifact
-        env:
-          RELEASE_VERSION: ${{ github.ref_name }}
         run: |
           mkdir -p release-artifacts
           npm pack --workspace=tonto-language --pack-destination release-artifacts
       - name: Package the VS Code extension
         run: npm run package --workspace=tonto-vscode
       - name: Publish CLI to npm
+        if: ${{ inputs.publish_npm }}
         env:
-          RELEASE_VERSION: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          VERSION="${RELEASE_VERSION#v}"
+          VERSION="${RELEASE_TAG#v}"
           TARBALL="release-artifacts/tonto-language-${VERSION}.tgz"
           EXPECTED_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "$TARBALL" | openssl base64 -A)"
           if PUBLISHED_INTEGRITY="$(npm view "tonto-language@${VERSION}" dist.integrity 2>/dev/null)"; then
@@ -75,19 +90,21 @@ jobs:
             npm publish "$TARBALL" --access public --provenance
           fi
       - name: Publish extension to the Visual Studio Marketplace
+        if: ${{ inputs.publish_marketplace }}
         working-directory: packages/extension
         env:
-          RELEASE_VERSION: ${{ github.ref_name }}
-        run: npx @vscode/vsce publish --packagePath "tonto-${RELEASE_VERSION#v}.vsix" --oidc --skip-duplicate
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: npx @vscode/vsce publish --packagePath "tonto-${RELEASE_TAG#v}.vsix" --oidc --skip-duplicate
       - name: Create or update the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
-          RELEASE_VERSION: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          VSIX="packages/extension/tonto-${RELEASE_VERSION#v}.vsix"
+          VERSION="${RELEASE_TAG#v}"
+          VSIX="packages/extension/tonto-${VERSION}.vsix"
+          TARBALL="release-artifacts/tonto-language-${VERSION}.tgz"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$VSIX" --clobber
+            gh release upload "$RELEASE_TAG" "$VSIX" "$TARBALL" --clobber
           else
-            gh release create "$RELEASE_TAG" "$VSIX" --generate-notes --title "tonto ${RELEASE_VERSION#v}"
+            gh release create "$RELEASE_TAG" "$VSIX" "$TARBALL" --verify-tag --generate-notes --title "tonto ${VERSION}"
           fi

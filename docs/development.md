@@ -130,8 +130,10 @@ with `npm install --global tonto-language` if desired.
 ### Prepare and publish a release
 
 The developer communicates release intent by selecting a version, reviewing
-the coordinated version change, and pushing a signed tag. Ordinary builds,
-commits, and local installs do not publish packages.
+the coordinated version change, and manually dispatching the `Release tonto`
+workflow. Pushing a tag does not start a release. The workflow's npm and
+Marketplace publication options default to off, so a GitHub-only release does
+not require either registry to be configured.
 
 1. Choose the SemVer release, for example `0.2.0`.
 2. Run `npm run release:prepare -- 0.2.0`. It sets the
@@ -147,30 +149,31 @@ commits, and local installs do not publish packages.
    git push origin v0.2.0
    ```
 
-5. The release workflow verifies the tag signature and confirms that the tag
-   and all package versions agree. It builds and tests the tagged commit,
-   packages the npm CLI and VSIX, publishes them to npm and the VS Code
-   Marketplace, and creates a GitHub Release with the VSIX attached.
+   Pushing the tag does not run the release workflow.
+5. In GitHub Actions, select `Release tonto` and choose **Run workflow**.
+   Enter the tag (for example, `v0.9.0`) and leave **Publish CLI package to
+   npm** and **Publish extension to the VS Code Marketplace** unchecked for a
+   GitHub-only release. The workflow verifies the signed tag and package
+   versions, builds and checks the tagged commit, packages the CLI `.tgz` and
+   extension `.vsix`, and attaches both to the GitHub Release.
 
-The signed tag is the release authorization and source identity; the GitHub
-Release is the user-facing release page and download location. Protect the
-`v*` tag namespace and configure CI to accept only the trusted release
-signer. Build and package all artifacts before publication. Since npm and the
-Marketplace do not publish atomically, the workflow should report partial
-publication clearly and safely resume a release if one registry succeeds
-before the other.
+The signed tag identifies the release source; the GitHub Release is the
+download page. The workflow requires the `RELEASE_SIGNING_PUBLIC_KEY` secret
+and `RELEASE_SIGNING_FINGERPRINT` variable even when publishing only to
+GitHub. Protect the `v*` tag namespace and configure CI to accept only the
+trusted release signer. When registry publishing is ready, configure npm and
+Marketplace trusted publishing, then select the corresponding options when
+dispatching the workflow. Since those registries do not publish atomically,
+the workflow checks for an identical existing npm package and skips duplicate
+Marketplace versions.
 
-CI enforces version agreement with `npm run versions:check`. Before the first
-release, configure [`tonto-language` on npm to trust the GitHub Actions
-workflow](https://docs.npmjs.com/trusted-publishers/) in
-`.github/workflows/release.yml`, and configure trusted publishing for the
-`nemo-ufes` Marketplace publisher and that workflow. No long-lived publishing
-tokens are used. Add the armored release signing public key as the
-`RELEASE_SIGNING_PUBLIC_KEY` repository secret and its primary fingerprint as
-the `RELEASE_SIGNING_FINGERPRINT` repository variable. CI imports that key,
-checks the fingerprint, verifies the tag signature, and only then publishes.
-Protect the `v*` tag namespace so release tags require the intended
-maintainer approval.
+CI enforces version agreement with `npm run versions:check`. For a GitHub-only
+release, configure the release signing secret and variable described above;
+no npm or Marketplace credentials are needed. Before enabling either
+publication option, configure [`tonto-language` on npm to trust the GitHub
+Actions workflow](https://docs.npmjs.com/trusted-publishers/) and configure
+trusted publishing for the `nemo-ufes` Marketplace publisher and that
+workflow. No long-lived publishing tokens are used.
 
 After release, CLI users update through npm. VS Code distributes the
 extension update through the Marketplace; that extension contains the
