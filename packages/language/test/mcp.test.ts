@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -197,6 +197,25 @@ describe('the MCP server', () => {
             expect((await client.tool('tonto_gufo', { paths: ['shop.tonto'], write: true, outDir: 'generated' })).isError).toBe(true);
         } finally {
             client.stop();
+        }
+    }, 30_000);
+
+    test('file paths cannot read outside the workspace', async () => {
+        const workspace = mkdtempSync(join(tmpdir(), 'tonto-mcp-paths-'));
+        const outside = `${workspace}-outside.tonto`;
+        writeFileSync(outside, 'ontology outside\nkind Secret\n');
+        const client = await connected(workspace);
+        try {
+            const traversed = await client.tool('tonto_validate', { paths: [`../${basename(outside)}`] });
+            expect(traversed.isError).toBe(true);
+            expect(traversed.text).toContain('must stay inside the workspace');
+
+            const absolute = await client.tool('tonto_validate', { paths: [outside] });
+            expect(absolute.isError).toBe(true);
+            expect(absolute.text).toContain('relative to the workspace');
+        } finally {
+            client.stop();
+            unlinkSync(outside);
         }
     }, 30_000);
 

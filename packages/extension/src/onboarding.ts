@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import type { LanguageClient } from 'vscode-languageclient/node';
 import { withClaudeHook } from 'tonto-language/agent-hook';
 
-const WALKTHROUGH = 'tonto-redesign.tonto-vscode#tonto.getStarted';
+const WALKTHROUGH = 'nemo-ufes.tonto-vscode#tonto.getStarted';
 const GUIDE_URI = vscode.Uri.from({ scheme: 'tonto-reference', path: '/tonto Language Guide.md' });
 
 const DONT_ASK_KEY = 'tonto.agents.dontAsk';

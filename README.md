@@ -98,18 +98,29 @@ The gUFO export checks the ontology and writes `people.ttl` beside its ontology 
 
 ## Command line and agents
 
-The VS Code extension is enough for ordinary modeling. From a source checkout with Node.js 22 or later, the same language services are available on the command line:
+The VS Code extension is enough for ordinary modeling. After the first npm release, the standalone CLI will require Node.js 22 or later. Install it globally for a shell-wide `tonto` command, or locally to pin its version to a project:
 
 ```sh
-npx tonto guide
+# Global installation
+npm install --global tonto-language
+tonto --version
+tonto guide
+
+# Or, from a model project
+npm install --save-dev tonto-language
 npx tonto check people.tonto --json
-npx tonto rules
-npx tonto patterns
-npx tonto format people.tonto
-npx tonto gufo people.tonto --write
 ```
 
-`check` reports each problem with a stable code, position, and available edits. `npx tonto check people.tonto --fix` applies repairs the rule forces; ambiguous modeling choices remain yours. `gufo --write` writes each checked ontology's Turtle beside its ontology file. See [AGENTS.md](AGENTS.md#writing-tonto) for workspace, stdin, and selective repair options.
+`check` reports each problem with a stable code, position, and available edits. `npx tonto check people.tonto --fix` applies repairs the rule forces; ambiguous modeling choices remain yours. `gufo --write` writes each checked ontology's Turtle beside its ontology file. See the [CLI package guide](packages/language/README.md) and [modeling instructions](AGENTS.md#writing-tonto) for install, workspace, stdin, and selective repair options. In a source checkout, invoke the local binary as `./node_modules/.bin/tonto`.
+
+Until that release is published, build this checkout and invoke the workspace
+binary directly:
+
+```sh
+npm install
+npm run build
+./node_modules/.bin/tonto guide
+```
 
 The extension also exposes the language guide, validation, repairs, patterns, and export as tools to VS Code agents. **Tonto: Set Up Codex and Claude in Workspace** configures the bundled MCP server and project instructions for those agents. The [installation guide](docs/installation.md) explains setup and use.
 

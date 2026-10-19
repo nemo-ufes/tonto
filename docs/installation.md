@@ -43,6 +43,32 @@ The walkthrough can create a valid one-file ontology, open the language guide,
 show validation diagnostics, export the model, and introduce the agent tools.
 To return to it later, run **Tonto: Get Started** from the Command Palette.
 
+### Optional: install the standalone CLI
+
+The CLI is a separate npm package; it is not needed by the VS Code extension.
+The npm installation commands below will work after its first release. Until
+then, build a source checkout with `npm install` and `npm run build`, then use
+`./node_modules/.bin/tonto`. The standalone CLI requires Node.js 22 or later.
+After publication, install it globally for a shell-wide command:
+
+```sh
+npm install --global tonto-language
+tonto --version
+tonto guide
+```
+
+For a project-pinned version, install it in the model project and run it with
+`npx`:
+
+```sh
+npm install --save-dev tonto-language
+npx tonto check model.tonto
+```
+
+See the [CLI package guide](../packages/language/README.md) for the one-time
+`npx --package` form and upgrade instructions. The extension's agent setup
+continues to use its bundled MCP server independently of this CLI install.
+
 If the `code` command is available, the equivalent command is:
 
 ```sh
@@ -289,6 +315,34 @@ automaticamente. Instale o novo VSIX quando o distribuidor disponibilizá-lo.
 Na próxima ativação do tonto, a extensão também atualiza o runtime MCP usado
 pelas configurações existentes do Codex e do Claude; inicie uma nova conversa
 com o agente para carregar novas ferramentas ou parâmetros.
+
+### Opcional: instale a CLI independente
+
+A CLI é um pacote npm separado e não é necessária para usar a extensão do VS
+Code. É preciso ter Node.js 22 ou posterior. Para disponibilizar `tonto` no
+terminal, após a primeira publicação do pacote:
+
+Até lá, no checkout do repositório, execute `npm install` e `npm run build`,
+depois use `./node_modules/.bin/tonto`.
+
+```sh
+npm install --global tonto-language
+tonto --version
+tonto guide
+```
+
+Para fixar uma versão por projeto, instale-a no projeto do modelo e execute-a
+com `npx`:
+
+```sh
+npm install --save-dev tonto-language
+npx tonto check modelo.tonto
+```
+
+O [guia do pacote da CLI](../packages/language/README.md) descreve a execução
+única com `npx --package` e como atualizar. A configuração de agentes da
+extensão continua usando o MCP incluído, independentemente da instalação da
+CLI.
 
 ### 2. Abra um projeto tonto
 

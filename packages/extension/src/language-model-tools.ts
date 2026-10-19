@@ -75,7 +75,7 @@ class Sessions {
 function resolveTargets(): string[] {
     const active = vscode.window.activeTextEditor?.document;
     if (active?.languageId === 'tonto' && active.uri.scheme === 'file') {
-        return [openModelRoot(active.uri.fsPath)];
+        return [active.uri.fsPath];
     }
     if (active?.languageId === 'tonto') {
         throw new ToolError('Save the untitled tonto file first, or provide its text as source.');

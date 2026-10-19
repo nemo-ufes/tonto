@@ -21,6 +21,9 @@ writeFileSync(join(workspace, 'hiring.tonto'), 'ontology hiring\n\nkind Person\n
 const userData = mkdtempSync(join(tmpdir(), 'tonto-ud-'));
 try {
     await runTests({
+        // Set this to an installed VS Code executable to run offline; otherwise
+        // @vscode/test-electron downloads its default stable build.
+        vscodeExecutablePath: process.env.VSCODE_EXECUTABLE_PATH,
         extensionDevelopmentPath: resolve(here, '..'),
         extensionTestsPath: resolve(here, 'integration', 'index.cjs'),
         extensionTestsEnv: { TONTO_TEST_WORKSPACE: workspace },

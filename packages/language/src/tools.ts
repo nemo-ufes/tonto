@@ -394,7 +394,7 @@ export const TOOLS: readonly ToolDefinition[] = [
             const ast = await session.astOf(source);
             const errors = diagnostics.filter(diagnostic => diagnostic.severity === 'error');
             if (errors.length > 0) {
-                return { isError: true, text: `The source has errors, so its partial tree is not returned as a model.\n\n${renderDiagnostics(errors)}`, data: { ast, diagnostics } };
+                return { isError: true, text: `The source has errors, so its partial tree is not returned as a model.\n\n${renderDiagnostics(errors)}`, data: { diagnostics } };
             }
             return { text: JSON.stringify(ast), data: { ast, diagnostics } };
         }
