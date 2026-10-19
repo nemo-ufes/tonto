@@ -1,0 +1,46 @@
+/// Retail products and three forms of quality value.
+/// @label Qualities and quality values
+/// @namespace https://purl.org/nemo/gufo-examples/qualities#
+ontology retail-qualities
+
+/// A gemstone offered by the retailer.
+kind Gemstone
+
+/// A T-shirt offered by the retailer.
+kind TShirt
+
+/// A painting offered by the retailer.
+kind Painting
+
+/// The mass of one gemstone, measured in grams.
+quality Mass {
+    @characterization [1] -- [1] (const) Gemstone
+    grams: number
+}
+
+/// The size of one T-shirt.
+quality Size {
+    @characterization [1] -- [1] (const) TShirt
+    value: ShirtSize
+}
+
+/// One of the retailer's shirt sizes.
+enum ShirtSize {
+    S,
+    M,
+    L,
+    XL
+}
+
+/// The color of one painting.
+quality Color {
+    @characterization [1] -- [1] (const) Painting
+    value: ColorValueInRGB
+}
+
+/// A color as red, green, and blue components.
+datatype ColorValueInRGB {
+    red: const number
+    green: const number
+    blue: const number
+}

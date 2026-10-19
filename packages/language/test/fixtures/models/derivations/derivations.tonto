@@ -1,0 +1,24 @@
+/// @namespace https://example.org/derivations#
+ontology derivations
+
+kind Person
+kind University
+role Student specializes Person
+
+relator Enrollment {
+    @mediation [1..*] -- [1] (const) Student
+    @mediation [0..*] -- [1] (const) University
+}
+
+event Graduation
+event Birth
+subkind BirthInBrazil specializes Birth
+event Death
+
+@participation relation Student (const) [1..*] -- graduatedIn -- [0..*] (addOnly) Graduation
+@creation relation Person (const) [1] -- wasBornIn -- [1] (const) Birth
+@termination relation Person (const) [1] -- diedIn -- [0..1] Death
+
+historicalRole Graduate specializes Person derivedFrom Student.graduatedIn
+historicalRole BornInBrazil specializes Person derivedFrom BirthInBrazil
+historicalRole Deceased specializes Person derivedFrom Person.diedIn

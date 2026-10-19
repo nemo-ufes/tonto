@@ -17,7 +17,7 @@ and [installation guide](installation.md). The language decisions are in
 | `packages/language/src/gufo.ts` and `exports.ts` | gUFO mapping and shared export writing |
 | `packages/extension/` | VS Code client, language-server bundle, commands, and agent integration |
 | `packages/mcp/` | MCP host for the shared language tools |
-| `packages/language/test/fixtures/models/` | Valid and deliberately broken model fixtures |
+| `packages/language/test/fixtures/models/` | Vendored example models for parsing and formatting tests |
 
 The entry grammar is `packages/language/src/tonto.langium`. It imports the
 grammar fragments and generates the AST under

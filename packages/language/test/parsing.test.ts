@@ -7,7 +7,7 @@ import { parseHelper } from 'langium/test';
 import type { LangiumDocument } from 'langium';
 import { createTontoServices } from '../src/tonto-module.js';
 import type { Model } from '../src/generated/ast.js';
-import { isClassDeclaration, isDatatype, isExternalRelation, isInternalRelation } from '../src/generated/ast.js';
+import { isClassDeclaration, isDatatype, isEnumeration, isExternalRelation, isInternalRelation } from '../src/generated/ast.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const examplesDir = resolve(__dirname, 'fixtures/models');
@@ -27,58 +27,59 @@ describe('parsing single files', () => {
         await allServices.shared.workspace.WorkspaceManager.initializeWorkspace([]);
     });
 
-    test('parses the showcase example with no errors', async () => {
-        const text = readFileSync(resolve(examplesDir, 'showcase.tonto'), 'utf-8');
+    test.each(['relators/relators.tonto', 'qualities/qualities.tonto'])(
+        'parses the %s example with no errors', async fileName => {
+            const text = readFileSync(resolve(examplesDir, fileName), 'utf-8');
+            const document = await parse(text, { validation: true });
+            expect(document.parseResult.parserErrors, diagnosticsText(document)).toHaveLength(0);
+            expect(document.parseResult.lexerErrors, diagnosticsText(document)).toHaveLength(0);
+
+            const errors = (document.diagnostics ?? []).filter(d => d.severity === 1);
+            expect(errors, diagnosticsText(document)).toHaveLength(0);
+        }
+    );
+
+    test('represents classes and both relation forms in the relators example', async () => {
+        const text = readFileSync(resolve(examplesDir, 'relators/relators.tonto'), 'utf-8');
         const document = await parse(text, { validation: true });
-        expect(document.parseResult.parserErrors, diagnosticsText(document)).toHaveLength(0);
-        expect(document.parseResult.lexerErrors, diagnosticsText(document)).toHaveLength(0);
+        const declarations = document.parseResult.value.packages.flatMap(p => p.declarations);
 
-        const errors = (document.diagnostics ?? []).filter(d => d.severity === 1);
-        expect(errors, diagnosticsText(document)).toHaveLength(0);
-    });
-
-    test('produces the redesigned AST shape', async () => {
-        const text = readFileSync(resolve(examplesDir, 'showcase.tonto'), 'utf-8');
-        const document = await parse(text, { validation: true });
-        const model = document.parseResult.value;
-
-        const showcase = model.packages.find(p => p.name === 'showcase');
-        expect(showcase).toBeDefined();
-
-        const person = showcase!.declarations.find(d => d.name === 'Person');
+        const person = declarations.find(d => d.name === 'Person');
         expect(person && isClassDeclaration(person)).toBe(true);
         if (person && isClassDeclaration(person)) {
-            // Stereotype and natures are flattened directly onto the node,
-            // not nested in wrapper objects.
             expect(person.stereotype).toBe('kind');
             expect(Array.isArray(person.natures)).toBe(true);
         }
 
-        const marriage = showcase!.declarations.find(d => d.name === 'Marriage' && isClassDeclaration(d));
-        expect(marriage && isClassDeclaration(marriage)).toBe(true);
-        if (marriage && isClassDeclaration(marriage)) {
-            expect(marriage.relations).toHaveLength(1);
-            expect(isInternalRelation(marriage.relations[0])).toBe(true);
+        const employment = declarations.find(d => d.name === 'Employment');
+        expect(employment && isClassDeclaration(employment)).toBe(true);
+        if (employment && isClassDeclaration(employment)) {
+            expect(employment.relations.some(isInternalRelation)).toBe(true);
         }
 
-        const involvesSpouse = showcase!.declarations.find(d => d.name === 'involvesSpouse');
-        expect(involvesSpouse && isExternalRelation(involvesSpouse)).toBe(true);
+        const employedBy = declarations.find(d => d.name === 'employedBy');
+        expect(employedBy && isExternalRelation(employedBy)).toBe(true);
+    });
 
-        const fullName = showcase!.declarations.find(d => d.name === 'FullName');
-        expect(fullName && isDatatype(fullName)).toBe(true);
+    test('represents datatypes and enumerations in the qualities example', async () => {
+        const text = readFileSync(resolve(examplesDir, 'qualities/qualities.tonto'), 'utf-8');
+        const document = await parse(text, { validation: true });
+        const declarations = document.parseResult.value.packages.flatMap(p => p.declarations);
+        expect(declarations.some(d => d.name === 'ColorValueInRGB' && isDatatype(d))).toBe(true);
+        expect(declarations.some(d => d.name === 'ShirtSize' && isEnumeration(d))).toBe(true);
     });
 });
 
 describe('parsing a multi-package workspace', () => {
-    test('resolves cross-package references via import and global visibility', async () => {
+    test('resolves references among the scientific-publications packages', async () => {
         const allServices = createTontoServices(EmptyFileSystem);
         const services = allServices.Tonto;
         await allServices.shared.workspace.WorkspaceManager.initializeWorkspace([]);
-        const fileNames = ['academia.tonto', 'PersonAndOrganizationDatatypes.tonto', 'Person.tonto', 'University.tonto'];
+        const fileNames = ['scientific-publications.tonto', 'publications.tonto', 'authorship.tonto', 'publishers.tonto'];
 
         const documents = fileNames.map(fileName => {
-            const text = readFileSync(resolve(examplesDir, 'university', fileName), 'utf-8');
-            const uri = URI.file(resolve(examplesDir, 'university', fileName));
+            const text = readFileSync(resolve(examplesDir, 'scientific-publications', fileName), 'utf-8');
+            const uri = URI.file(resolve(examplesDir, 'scientific-publications', fileName));
             return services.shared.workspace.LangiumDocumentFactory.fromString<Model>(text, uri);
         });
 

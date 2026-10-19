@@ -166,7 +166,31 @@ disjoint genset G where Student specializes Person`;
         expect(formatted).toContain('@comparative relation Person -- r -- Person derivedFrom Height, Weight');
     });
 
-    test.each(['showcase.tonto', 'university/Person.tonto', 'university/University.tonto'])(
+    test('keeps relation refinements and modifiers that the example corpus does not use', async () => {
+        const source = `package refinement
+            kind Person {
+                nicknames: ordered string [*]
+                age: derived number
+                @componenthood [1] <>-- hasHeart -- [1] (heart) Heart
+            }
+            kind Heart
+            subkind Athlete specializes Person {
+                @componenthood [1] <>-- [1] (heart redefines Person.heart) Heart specializes Person.hasHeart
+            }
+            relation Person -- hasOtherHeart -- (otherHeart subsets heart) Heart
+            relation Heart -- belongsTo -- Person inverseOf Person.hasHeart
+            type PersonType isPowerType`;
+        const formatted = await format(source);
+        expect(await parseErrors(formatted), formatted).toBe(0);
+        expect(await fingerprint(formatted)).toBe(await fingerprint(source));
+        for (const spelling of ['ordered string', 'derived number', 'redefines Person.heart',
+            'subsets heart', 'inverseOf Person.hasHeart', 'isPowerType']) {
+            expect(formatted).toContain(spelling);
+        }
+    });
+
+    test.each(['relators/relators.tonto', 'qualities/qualities.tonto',
+        'scientific-publications/authorship.tonto', 'scientific-publications/publishers.tonto'])(
         'round-trips the %s example without changing its structure',
         async fileName => {
             const source = readFileSync(resolve(examplesDir, fileName), 'utf-8');

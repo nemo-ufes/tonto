@@ -1,0 +1,47 @@
+/// Cars, fleets, and the portions of fuel blended for them.
+/// @label Objects and their parts
+/// @namespace https://purl.org/nemo/gufo-examples/objects-and-parts#
+ontology objects-and-parts
+
+/// A vehicle made of functional components.
+kind Car {
+    @componenthood [1] <>-- [1] Engine
+    @componenthood [1] <>-- [4] Wheel
+}
+
+/// The engine of a car.
+kind Engine
+
+/// A wheel of a car.
+kind Wheel
+
+/// A collection of cars whose membership may change.
+collective Fleet {
+    @membership [0..*] <>-- [2..*] Car
+    @subCollection [0..1] <>-- [1] ElectricSubfleet
+}
+
+/// The electric cars within a fleet.
+collective ElectricSubfleet {
+    @membership [0..*] <>-- [2..*] Car
+}
+
+/// A maximally self-connected portion of blended gasoline.
+quantity QuantityOfGasoline {
+    @subQuantity [1] <>-- [1] (const) QuantityOfEthanol
+    @subQuantity [1] <>-- [1] (const) QuantityOfPetroleumDistillate
+}
+
+/// A maximally self-connected portion of ethanol.
+quantity QuantityOfEthanol
+
+/// A maximally self-connected portion of petroleum distillate.
+quantity QuantityOfPetroleumDistillate {
+    @subQuantity [1] <>-- [1] (const) QuantityOfBenzene
+}
+
+/// A maximally self-connected portion of benzene.
+quantity QuantityOfBenzene
+
+/// A later portion of gasoline can arise from two earlier portions being mixed.
+@historicalDependence relation QuantityOfGasoline (const) [0..*] -- aroseFrom -- [0..*] (const) QuantityOfGasoline

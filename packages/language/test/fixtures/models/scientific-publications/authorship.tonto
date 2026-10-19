@@ -1,0 +1,18 @@
+package authorship in scientific-publications
+use publications
+
+/// A human being who may contribute to a scientific publication.
+kind Person
+
+/// A person while credited as an author of a publication.
+role Author specializes Person
+
+/// One author's contribution to one publication.
+relator Authorship {
+    @mediation [1..*] -- [1] (const) Author
+    @mediation [1..*] -- [1] (const) Publication
+    order: const number
+}
+
+/// A publication credited to an author.
+@material relation Author [1..*] -- authored -- [1..*] Publication derivedFrom Authorship

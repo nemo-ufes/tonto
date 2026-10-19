@@ -414,7 +414,7 @@ stale.
 | `packages/language` | grammar, validation, LSP services, `tonto` CLI |
 | `packages/extension` | the VS Code extension |
 | `packages/mcp` | the MCP server |
-| `packages/language/test/fixtures/models/` | test models, some of them deliberately broken |
+| `packages/language/test/fixtures/models/` | vendored example models for parsing and formatting tests |
 
 ### Agent tools, defined once
 

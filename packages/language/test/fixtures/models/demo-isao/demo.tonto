@@ -1,0 +1,99 @@
+/// A compact ontology of people and university life.
+/// @namespace https://purl.org/nemo/fois/demo#
+ontology demo
+
+/// A living functional complex.
+category Animal of functional-complexes
+
+/// An animal person.
+kind Person specializes Animal
+
+/// A person during childhood.
+phase Child specializes Person
+
+/// A person during adulthood.
+phase Adult specializes Person
+
+/// Partitions people by life phase.
+disjoint complete genset byLifePhase
+    where Child, Adult specializes Person
+
+/// A person while ill.
+phase IllPerson specializes Person
+
+/// A person while healthy.
+phase HealthyPerson specializes Person
+
+/// Partitions people by health status.
+disjoint complete genset byHealthStatus
+    where IllPerson, HealthyPerson specializes Person
+
+/// An organized group with a shared purpose.
+kind Organization
+
+/// An organization dedicated to higher education.
+subkind University specializes Organization
+
+/// A university while it enrolls students.
+role EnrollingUniversity specializes University
+
+/// A university while it employs professors.
+role EmployingUniversity specializes University
+
+/// A person while enrolled at a university.
+role Student specializes Person
+
+/// A person who has graduated.
+historicalRole Graduate specializes Person {
+    // Identifies the graduation event in which a graduate participated.
+    @participation (const) [0..*] -- graduatedIn -- [1] Graduation
+}
+
+/// A person while academically employed by a university.
+role Professor specializes Person
+
+/// An event in which students take a final examination.
+event FinalExamination
+
+historicalRole ApprovedStudent specializes Person derivedFrom Student.approvedIn
+
+// Relates students to the final examination in which they were approved
+@participation relation Student (const) [*] -- approvedIn -- [0..1] FinalExamination
+
+/// An event marking the completion of a course of study.
+event Graduation {
+    /// When the graduation started.
+    @begin startDate: const date
+    /// When the graduation finished.
+    @end endDate: const date
+    /// The final examination on which the graduation historically depends.
+    @historicalDependence (addOnly) [*] -- [1] (const) FinalExamination
+}
+
+/// Relates students to the universities where they study.
+@material relation Student [1..*] -- studiesAt -- [1..*] EnrollingUniversity derivedFrom Enrollment
+
+/// Relates professors to the universities where they work.
+@material relation Professor [1..*] -- worksAt -- [1..*] EmployingUniversity derivedFrom AcademicEmployment
+
+/// An enrollment binding a student to a university.
+relator Enrollment {
+    /// When the enrollment started.
+    @begin startDate: const date
+    /// When the enrollment ended, if it has ended.
+    @end endDate: const date [0..1]
+    /// The student bound by the enrollment.
+    @mediation [1..*] -- [1] (const) Student
+    /// The university bound by the enrollment.
+    @mediation [1..*] -- [1] (const) EnrollingUniversity
+    /// The graduation in which the enrollment may manifest.
+    @manifestation (const) [*] -- [0..1] Graduation
+}
+
+/// An employment binding a professor to a university.
+relator AcademicEmployment {
+    /// The professor bound by the employment.
+    @mediation [1..*] -- [1] (const) Professor
+    /// The university bound by the employment.
+    @mediation [1..*] -- [1] (const) EmployingUniversity
+}

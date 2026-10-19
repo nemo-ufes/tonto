@@ -1,0 +1,65 @@
+/// People and organizations, and the kinds, phases, and roles they instantiate.
+/// @label Endurant types
+/// @namespace https://purl.org/nemo/gufo-examples/endurant-types#
+ontology endurant-types
+
+/// An entity capable of acting, whether a person or an organization.
+category Agent of functional-complexes
+
+/// An agent while acting as a customer.
+roleMixin Customer of functional-complexes specializes Agent
+
+/// An agent while it is operative.
+phaseMixin ActiveAgent of functional-complexes specializes Agent
+
+/// An agent while it is no longer operative.
+phaseMixin InactiveAgent of functional-complexes specializes Agent
+
+disjoint complete genset activityStatus where ActiveAgent, InactiveAgent specializes Agent
+
+/// A human being.
+kind Person specializes Agent
+
+/// An organization of people.
+kind Organization specializes Agent
+
+/// An organization that is a university.
+subkind University specializes Organization
+
+/// A person in childhood.
+phase Child specializes Person
+
+/// A person in adulthood.
+phase Adult specializes Person
+
+disjoint complete genset lifeStages where Child, Adult specializes Person
+
+/// A person enrolled at a university.
+role Student specializes Person
+
+/// A person in an employment relationship.
+role Employee specializes Person
+
+/// An agent's purchase from a seller.
+relator Purchase {
+    @mediation [1..*] -- [1] (const) Customer
+    @mediation [1..*] -- [1] (const) Seller
+}
+
+/// An organization while selling to a customer.
+role Seller specializes Organization
+
+/// A student's enrollment at a university.
+relator Enrollment {
+    @mediation [1..*] -- [1] (const) Student
+    @mediation [0..*] -- [1] (const) University
+}
+
+/// A person's employment.
+relator Employment {
+    @mediation [1..*] -- [1] (const) Employee
+    @mediation [1..*] -- [1] (const) Employer
+}
+
+/// An organization while employing a person.
+role Employer specializes Organization

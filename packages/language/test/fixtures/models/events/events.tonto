@@ -1,0 +1,58 @@
+/// A football tournament and the people, clubs, and events involved in it.
+/// @label Events
+/// @namespace https://purl.org/nemo/gufo-examples/events#
+ontology football-events
+
+/// A football tournament made up of a ceremony and matches.
+event Tournament {
+    @structural (const) [1] <>-- [0..1] (const) OpeningCeremony
+    @structural (const) [1] <>-- [2..*] (const) Match
+}
+
+/// A football match within a tournament.
+event Match {
+    @participational (const) [1] <>-- [2..*] (const) PlayerParticipation
+}
+
+/// A semifinal match.
+subkind SemiFinal specializes Match
+
+/// The final match.
+subkind Final specializes Match
+
+/// The ceremony that opens the tournament.
+event OpeningCeremony
+
+/// A human being, whether or not playing football.
+kind Person
+
+/// A person while playing for a football club.
+role Player specializes Person
+
+/// A football club.
+kind Club
+
+/// A player's membership in a club.
+relator ClubMembership {
+    @mediation [1..*] -- [1] (const) Player
+    @mediation [0..*] -- [1] (const) Club
+}
+
+/// A person's lasting knee injury, including after a playing career ends.
+intrinsicMode KneeInjury {
+    @characterization [0..*] -- [1] (const) Person
+    @manifestation (const) [0..*] -- manifestedIn -- [0..*] (const) Match
+    /// The match in which this injury arose, if it arose during a match.
+    @creation (const) [0..*] -- wasCreatedIn -- [0..1] (const) Match
+}
+
+/// A player's participation in a match that has occurred.
+@participation relation Player (const) [0..*] -- participatedInMatch -- [0..*] (addOnly) Match
+
+/// The event portion constituted exclusively by one player's participation.
+event PlayerParticipation
+
+@participation relation Player (const) [1] -- participatedIn -- [0..*] (addOnly) PlayerParticipation
+
+/// The final depended on the semifinal results that preceded it.
+@historicalDependence relation Final (const) [0..1] -- followed -- [2] (const) SemiFinal

@@ -1,0 +1,26 @@
+package publishers in scientific-publications
+use publications
+
+/// An organization that produces scholarly publications.
+kind Organization
+
+/// A university press that publishes scholarly work.
+subkind UniversityPress specializes Organization
+
+/// A commercial organization that publishes scholarly work.
+subkind CommercialPublisher specializes Organization
+
+/// A scholarly society that publishes work in its field.
+subkind ScholarlySocietyPublisher specializes Organization
+
+/// A publishing organization while publishing a scientific publication.
+role Publisher specializes Organization
+
+/// The publishing of one publication by one publisher.
+relator PublicationArrangement {
+    @mediation [1..*] -- [1] (const) Publisher
+    @mediation [1] -- [1] (const) Publication
+}
+
+/// The publisher responsible for a publication.
+@material relation Publication [1..*] -- publishedBy -- [1] Publisher derivedFrom PublicationArrangement

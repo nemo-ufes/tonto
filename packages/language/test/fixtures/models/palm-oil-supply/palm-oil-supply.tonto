@@ -1,0 +1,268 @@
+/// Indonesian palm oil supply chains as Trase reconstructs them: the yearly
+/// flows of crude and refined palm oil from the regencies where oil palm fruit
+/// is grown, through mills, refineries and export ports, to the importers and
+/// countries that first receive the oil, together with the deforestation and
+/// emissions attributed to each flow.
+/// @label Indonesian palm oil supply chains
+/// @namespace https://example.org/palm-oil-supply#
+ontology palm-oil-supply
+
+// ---------------------------------------------------------------------------
+// Places
+// ---------------------------------------------------------------------------
+
+/// A sovereign state, such as Indonesia, India or the Netherlands.
+kind Country {
+    name: string
+    /// The two-letter ISO 3166 code of the country, such as ID or IN, which
+    /// Trase also uses to identify it.
+    isoCode: string
+    @componenthood [1] <>-- [0..*] Province
+}
+
+/// A province (provinsi), a first-level administrative division of Indonesia,
+/// such as Riau or Kalimantan Tengah. A province may be split, as Papua was in
+/// 2022, so the regencies that make it up can change.
+kind Province {
+    name: string
+    /// The code Trase gives the province, such as ID-14 for Riau.
+    traseId: string
+    @componenthood [1] <>-- [2..*] Regency
+}
+
+/// A regency (kabupaten), a second-level administrative division of Indonesia,
+/// such as Rokan Hulu or Kotawaringin Timur, where oil palm is grown.
+kind Regency {
+    name: string
+    /// The code Trase gives the regency, such as ID-1406 for Kampar.
+    traseId: string
+}
+
+/// A group of countries that form one market, such as the European Union. A
+/// country can join or leave one, as the United Kingdom left the European
+/// Union.
+collective EconomicBloc {
+    name: string
+    @membership [0..*] <>-- [2..*] Country
+}
+
+// ---------------------------------------------------------------------------
+// Companies and the groups that control them
+// ---------------------------------------------------------------------------
+
+/// A business that acts as one economic unit: a corporate group, or a company
+/// that belongs to none. Commitments are made, and assessments are passed, on
+/// enterprises.
+category Enterprise of functional-complexes, collectives {
+    name: string
+}
+
+/// A company that owns palm oil facilities or buys and sells palm oil, in
+/// Indonesia or abroad, such as Sari Dumai Sejati or Cargill.
+kind Company specializes Enterprise
+
+/// A corporate group: the companies under common ultimate ownership or
+/// control, such as Wilmar, Musim Mas or Royal Golden Eagle. Companies change
+/// hands, so a company can belong to different groups in different years. The
+/// group of a mill or refinery is the group of the company that owns it; a
+/// company that belongs to no group is its own enterprise.
+collective CorporateGroup specializes Enterprise {
+    @membership [0..1] <>-- [2..*] Company
+}
+
+/// A company while it owns a mill, refinery or port.
+role FacilityOwner specializes Company
+
+/// The ownership of one facility by one company.
+relator FacilityOwnership {
+    @mediation [1..*] -- [1] (const) FacilityOwner
+    @mediation [0..*] -- [1] (const) Facility
+}
+
+@material relation FacilityOwner [0..*] -- owns -- [1..*] Facility derivedFrom FacilityOwnership
+
+/// A company that exported palm oil from Indonesia.
+historicalRole Exporter specializes Company derivedFrom Company.exportedIn
+
+/// A company that received palm oil in the first country it entered after
+/// leaving Indonesia.
+historicalRole Importer specializes Company derivedFrom Company.importedIn
+
+// ---------------------------------------------------------------------------
+// Commitments and assessments of enterprises
+// ---------------------------------------------------------------------------
+
+/// A public pledge by an enterprise that the palm oil it produces and sources
+/// is free of deforestation.
+intrinsicMode ZeroDeforestationCommitment {
+    @characterization [0..*] -- [1] (const) Enterprise
+    @begin madeOn: const date [0..1]
+    @end withdrawnOn: const date [0..1]
+}
+
+/// A commitment to No Deforestation, No Peat and No Exploitation (NDPE):
+/// no clearing of forest, no planting on peat, and no exploitation of workers
+/// or local communities.
+subkind NdpeCommitment specializes ZeroDeforestationCommitment
+
+/// A zero-deforestation commitment in the enterprise's own terms that falls
+/// short of a full NDPE commitment.
+subkind OtherZeroDeforestationCommitment specializes ZeroDeforestationCommitment
+
+disjoint complete genset commitmentScope where NdpeCommitment, OtherZeroDeforestationCommitment specializes ZeroDeforestationCommitment
+
+/// An annual assessment by the Forest 500 of Global Canopy of how strong an
+/// enterprise's policies on palm oil and deforestation are.
+event Forest500Assessment {
+    year: const number
+    /// The palm oil score, from 0 for the weakest policies to 5 for the
+    /// strongest.
+    palmOilScore: const number
+}
+
+@participation relation Enterprise (const) [1] -- wasAssessedIn -- [0..*] (addOnly) Forest500Assessment
+
+// ---------------------------------------------------------------------------
+// Facilities
+// ---------------------------------------------------------------------------
+
+/// A site where palm oil is processed or shipped.
+category Facility of functional-complexes {
+    name: string
+}
+
+/// A palm oil mill, which presses fresh fruit bunches of oil palm into crude
+/// palm oil, such as the Sei Daun mill of Perkebunan Nusantara III. A mill
+/// takes fruit from plantations in several regencies.
+kind PalmOilMill specializes Facility {
+    /// The code Trase gives the mill, such as ID-PALM-MILL-00572.
+    traseId: string
+}
+
+/// A refinery, which refines crude palm oil into refined palm oil, such as
+/// the SDS refinery of Sari Dumai Sejati.
+kind PalmOilRefinery specializes Facility {
+    /// The code Trase gives the refinery, such as ID-PALM-REFINERY-0036.
+    traseId: string
+}
+
+/// A seaport from which palm oil leaves Indonesia, such as Belawan, Dumai or
+/// Tanjung Perak.
+kind Port specializes Facility
+
+// ---------------------------------------------------------------------------
+// Palm oil
+// ---------------------------------------------------------------------------
+
+/// A portion of palm oil, the oil pressed from the fruit of the oil palm.
+quantity PalmOil
+
+/// The products palm oil is traded as: crude or refined.
+type PalmOilProduct
+
+/// Palm oil as it comes from the mill, before refining.
+subkind CrudePalmOil (instanceOf PalmOilProduct) specializes PalmOil
+
+/// Palm oil that has been refined, bleached and deodorised, or fractionated.
+subkind RefinedPalmOil (instanceOf PalmOilProduct) specializes PalmOil
+
+disjoint complete genset palmOilProducts {
+    general PalmOil
+    categorizer PalmOilProduct
+    specifics CrudePalmOil, RefinedPalmOil
+}
+
+// ---------------------------------------------------------------------------
+// Supply flows and the events that make them up
+// ---------------------------------------------------------------------------
+
+/// A supply flow: all the palm oil of one product that, in one year, was grown
+/// in one regency, pressed at one mill, refined at one refinery or not at all,
+/// shipped out of Indonesia through one port by one exporter, and received by
+/// one importer in the first country it entered. Trase reconstructs these
+/// flows from customs and facility data.
+event SupplyFlow {
+    year: const number
+    /// The mass of palm oil, in tonnes.
+    volume: const number
+    /// The free-on-board value of the oil when exported, in US dollars.
+    fobValue: const number [0..1]
+    /// The hectares of forest cleared for oil palm in the regency in the year
+    /// of the flow that are attributed to the flow.
+    annualDeforestationExposure: const number [0..1]
+    /// The hectares of forest cleared for oil palm in the regency over the ten
+    /// years up to the flow that are attributed to the flow.
+    tenYearDeforestationExposure: const number [0..1]
+    /// The greenhouse gas emissions, in tonnes of CO2 equivalent, attributed
+    /// to the flow: its net land-use-change emissions, plus emissions from peat
+    /// subsidence and from fires on peat.
+    totalEmissionExposure: const number [0..1]
+    /// Emissions from land-use change, less the carbon taken up again by the
+    /// oil palm planted on the cleared land, in tonnes of CO2 equivalent.
+    netLandUseChangeEmissionExposure: const number [0..1]
+    /// Emissions from land-use change before the uptake by oil palm is
+    /// subtracted, in tonnes of CO2 equivalent.
+    grossLandUseChangeEmissionExposure: const number [0..1]
+    /// Emissions from drained peat that oxidises and subsides, in tonnes of
+    /// CO2 equivalent.
+    peatSubsidenceEmissionExposure: const number [0..1]
+    /// Emissions from fires on peat, in tonnes of CO2 equivalent.
+    peatFireEmissionExposure: const number [0..1]
+    @structural (const) [1] <>-- [1] (const) FruitProduction
+    @structural (const) [1] <>-- [1] (const) Milling
+    @structural (const) [1] <>-- [1] (const) Export
+    @structural (const) [1] <>-- [1] (const) Import
+}
+
+/// A supply flow of crude palm oil, exported without being refined.
+subkind CrudePalmOilFlow specializes SupplyFlow
+
+/// A supply flow of palm oil refined in Indonesia before it was exported.
+subkind RefinedPalmOilFlow specializes SupplyFlow {
+    @structural (const) [1] <>-- [1] (const) Refining
+}
+
+disjoint complete genset flowsByProduct where CrudePalmOilFlow, RefinedPalmOilFlow specializes SupplyFlow
+
+/// The growing and harvesting, in one regency, of the oil palm fruit whose oil
+/// makes up a supply flow.
+event FruitProduction {
+    /// The hectares of oil palm plantation on which the fruit was grown.
+    plantationArea: const number [0..1]
+}
+
+@historicalDependence relation FruitProduction (addOnly) [0..*] -- tookPlaceIn -- [1] (const) Regency
+
+/// An estate or smallholding planted with oil palm.
+kind OilPalmPlantation
+
+@participation relation OilPalmPlantation (const) [1..*] -- yieldedFruitIn -- [0..*] (addOnly) FruitProduction
+
+/// The pressing, at one mill, of the fruit of a supply flow into crude palm
+/// oil.
+event Milling
+
+@participation relation PalmOilMill (const) [1] -- pressedFruitIn -- [0..*] (addOnly) Milling
+@creation relation CrudePalmOil (const) [1..*] -- wasPressedIn -- [1] (const) Milling
+
+/// The refining, at one refinery, of the crude palm oil of a supply flow.
+event Refining
+
+@participation relation PalmOilRefinery (const) [1] -- refinedOilIn -- [0..*] (addOnly) Refining
+@termination relation CrudePalmOil (const) [1..*] -- wasRefinedIn -- [0..1] (addOnly) Refining
+@creation relation RefinedPalmOil (const) [1..*] -- wasProducedIn -- [1] (const) Refining
+
+/// The shipping of the palm oil of a supply flow out of Indonesia, by one
+/// exporter through one port.
+event Export
+
+@participation relation Company (const) [1] -- exportedIn -- [0..*] (addOnly) Export
+@participation relation Port (const) [1] -- shippedOilIn -- [0..*] (addOnly) Export
+@participation relation PalmOil (const) [1..*] -- wasExportedIn -- [0..1] (addOnly) Export
+
+/// The arrival of the palm oil of a supply flow in the first country it
+/// entered after leaving Indonesia, where one importer received it.
+event Import
+
+@participation relation Company (const) [1] -- importedIn -- [0..*] (addOnly) Import
+@historicalDependence relation Import (addOnly) [0..*] -- arrivedIn -- [1] (const) Country

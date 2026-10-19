@@ -1,0 +1,29 @@
+/// @namespace https://example.org/astronomy#
+ontology astronomy
+
+kind Galaxy {
+    @componenthood [1] <>-- [2..*] Star
+    @componenthood [1] <>-- [0..*] PlanetarySystem
+}
+
+kind PlanetarySystem {
+    @componenthood [0..1] <>-- [1..*] Star
+    @componenthood [1] <>-- [1..*] Planet
+}
+
+category CelestialBody of functional-complexes
+
+kind Star specializes CelestialBody
+
+kind Planet specializes CelestialBody
+
+relation Planet [0..*] -- orbits -- [1..*] Star
+
+subkind TerrestrialPlanet specializes Planet
+subkind GasGiant specializes Planet
+subkind IceGiant specializes Planet
+
+disjoint genset planetTypes {
+    general Planet
+    specifics TerrestrialPlanet, GasGiant, IceGiant
+}

@@ -1,0 +1,7 @@
+/// Scientific publications, their authors, and their publishers.
+/// @label Scientific publications
+/// @namespace https://example.org/scientific-publications#
+ontology scientific-publications bundles
+    publications from <publications.tonto>
+    authorship from <authorship.tonto>
+    publishers from <publishers.tonto>

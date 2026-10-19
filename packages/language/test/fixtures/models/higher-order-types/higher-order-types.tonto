@@ -1,0 +1,38 @@
+/// Animal species and their conservation status.
+/// @label Higher-order types
+/// @namespace https://purl.org/nemo/gufo-examples/higher-order-types#
+ontology higher-order-types
+
+/// A living animal.
+kind Animal
+
+/// A species that classifies animals.
+type AnimalSpecies
+
+/// Each animal belongs to one species; a species may classify many animals.
+@instantiation relation Animal [0..*] -- belongsToSpecies -- [1] AnimalSpecies
+
+/// A lion.
+subkind Lion (instanceOf AnimalSpecies) specializes Animal
+
+/// A hyena.
+subkind Hyena (instanceOf AnimalSpecies) specializes Animal
+
+/// An elephant.
+subkind Elephant (instanceOf AnimalSpecies) specializes Animal
+
+disjoint genset namedSpecies {
+    general Animal
+    categorizer AnimalSpecies
+    specifics Lion, Hyena, Elephant
+}
+
+/// The conservation assessment of a species.
+enum ConservationStatus {
+    Endangered,
+    Vulnerable,
+    LeastConcern
+}
+
+/// The conservation status belongs to the species, not to each animal.
+relation AnimalSpecies [1] -- hasConservationStatus -- [1] ConservationStatus

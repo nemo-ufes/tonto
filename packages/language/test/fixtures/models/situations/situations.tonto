@@ -1,0 +1,112 @@
+/// Patient conditions, treatments, and changing relationships.
+/// @label Situations
+/// @namespace https://purl.org/nemo/gufo-examples/situations#
+ontology patient-situations
+
+/// A human being, whether or not receiving care.
+kind Person
+
+/// A person while receiving care from a healthcare organization.
+role Patient specializes Person
+
+/// An organization that provides healthcare.
+kind HealthcareOrganization
+
+/// The ongoing care of a patient by a healthcare organization.
+relator CareEpisode {
+    @mediation [1..*] -- [1] (const) Patient
+    @mediation [0..*] -- [1] (const) HealthcareOrganization
+}
+
+/// A person while overweight, whether or not receiving care.
+phase OverweightPerson specializes Person
+
+/// A person while feverish, whether or not receiving care.
+phase FebrilePerson specializes Person
+
+/// A person while not overweight.
+phase NotOverweightPerson specializes Person
+
+/// A person while not feverish.
+phase AfebrilePerson specializes Person
+
+disjoint complete genset weightStatus where OverweightPerson, NotOverweightPerson specializes Person
+
+disjoint complete genset feverStatus where FebrilePerson, AfebrilePerson specializes Person
+
+/// A patient who is overweight.
+role OverweightPatient specializes Patient, OverweightPerson
+
+/// A patient who is feverish.
+role FebrilePatient specializes Patient, FebrilePerson
+
+/// A person's body weight, which persists when care ends.
+quality Weight {
+    @characterization [1] -- [1] (const) Person
+    kilograms: number
+}
+
+/// A human heart.
+kind Heart
+
+/// A heart while it is part of a person.
+@componenthood relation Person [0..1] <>-- hasHeart -- [0..1] Heart
+
+/// A crown fitted to a tooth.
+kind DentalCrown
+
+/// A portion of porcelain.
+quantity PorcelainQuantity
+
+/// A portion of composite resin.
+quantity CompositeResinQuantity
+
+/// Surgery that replaces a patient's heart.
+event HeartTransplantSurgery
+
+/// An alert prompted by evidence of sepsis.
+event PotentialSepsisAlert
+
+/// A period in which a patient has a specified weight value.
+situation WeightAttribution {
+    kilograms: const number
+    @presence [1] -- [1] (const) Patient
+}
+
+/// A period in which a patient is overweight.
+situation OverweightInstantiation {
+    @presence [1] -- [1] (const) OverweightPatient
+}
+
+/// A period in which a patient is feverish.
+situation FebrileInstantiation {
+    @presence [1] -- [1] (const) FebrilePatient
+    @triggering (const) [0..*] -- [0..*] (addOnly) PotentialSepsisAlert
+}
+
+/// A period in which a heart is part of a patient.
+situation HeartParthood {
+    @presence [1] -- [1] (const) Patient
+    @presence [1] -- [1] (const) Heart
+}
+
+/// A period in which a porcelain portion constitutes a crown.
+situation PorcelainConstitution {
+    @presence [1] -- [1] (const) DentalCrown
+    @presence [1] -- [1] (const) PorcelainQuantity
+}
+
+/// A period in which a resin portion constitutes a crown.
+situation ResinConstitution {
+    @presence [1] -- [1] (const) DentalCrown
+    @presence [1] -- [1] (const) CompositeResinQuantity
+}
+
+/// A period in which one patient is heavier than another.
+situation HeavierThanRelationship {
+    @presence [1] -- [2] (const) Patient
+}
+
+@comparative relation Patient [0..*] -- heavierThan -- [0..*] Patient derivedFrom Weight
+
+@bringingAbout relation HeartTransplantSurgery (const) [0..1] -- broughtAbout -- [1] (const) HeartParthood

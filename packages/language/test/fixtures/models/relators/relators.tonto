@@ -1,0 +1,64 @@
+/// Employment, marriage, and the rights and duties of employment.
+/// @label Relators and extrinsic aspects
+/// @namespace https://purl.org/nemo/gufo-examples/relators#
+ontology employment-relators
+
+/// A human being.
+kind Person
+
+/// An organization that may employ people.
+kind Organization
+
+/// A person while employed by an organization.
+role Employee specializes Person
+
+/// An organization while employing a person.
+role Employer specializes Organization
+
+/// The employment of an employee by an employer.
+relator Employment {
+    @begin beganOn: const date [0..1]
+    @mediation [1..*] -- [1] (const) Employee
+    @mediation [1..*] -- [1] (const) Employer
+    (const) [1] <>-- [1] (const) RightToSalary
+    (const) [1] <>-- [1] (const) DutyToPaySalary
+    (const) [1] <>-- [1] (const) DutyToWork
+    (const) [1] <>-- [1] (const) RightToLabor
+}
+
+/// The employer of an employee in an employment.
+@material relation Employee [1..*] -- employedBy -- [1..*] Employer derivedFrom Employment
+
+/// An employee's right to receive salary from an employer.
+extrinsicMode RightToSalary {
+    @characterization [0..*] -- [1] (const) Employee
+    @externalDependence [0..*] -- [1] (const) Employer
+    /// The employer's corresponding duty to pay this salary.
+    (const) [1] -- correlatesTo -- [1] (const) DutyToPaySalary
+}
+
+/// An employer's duty to pay an employee's salary.
+extrinsicMode DutyToPaySalary {
+    @characterization [0..*] -- [1] (const) Employer
+    @externalDependence [0..*] -- [1] (const) Employee
+}
+
+/// An employee's duty to work for an employer.
+extrinsicMode DutyToWork {
+    @characterization [0..*] -- [1] (const) Employee
+    @externalDependence [0..*] -- [1] (const) Employer
+}
+
+/// An employer's right to the employee's labor.
+extrinsicMode RightToLabor {
+    @characterization [0..*] -- [1] (const) Employer
+    @externalDependence [0..*] -- [1] (const) Employee
+    /// The employee's corresponding duty to work.
+    (const) [1] -- correlatesTo -- [1] (const) DutyToWork
+}
+
+/// The marriage of two people.
+relator Marriage {
+    @begin beganOn: const date [0..1]
+    @mediation [0..*] -- [2] (const) Person
+}

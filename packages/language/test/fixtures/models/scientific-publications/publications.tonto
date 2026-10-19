@@ -1,0 +1,21 @@
+package publications in scientific-publications
+
+/// A citable scientific publication in a particular published edition.
+category Publication of functional-complexes {
+    /// The title of the publication.
+    title: const string
+    /// The year in which this edition was published.
+    publicationYear: const number [0..1]
+}
+
+/// A scientific article published in a journal.
+kind JournalArticle specializes Publication
+
+/// A scientific paper published in conference proceedings.
+kind ConferencePaper specializes Publication
+
+/// A scholarly book devoted to a research topic.
+kind ScholarlyBook specializes Publication
+
+/// Journal articles, conference papers, and scholarly books are mutually exclusive publication types.
+disjoint genset publicationTypes where JournalArticle, ConferencePaper, ScholarlyBook specializes Publication
