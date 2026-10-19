@@ -30,6 +30,16 @@ function robot(...args) {
     }
 }
 
+// Whether an ontology, with what it imports, is within the OWL 2 DL profile.
+function inDL(input, catalogPath, what) {
+    const profile = input.replace(/\.ttl$/, '-profile.txt');
+    robot('validate-profile', '--profile', 'DL', '--catalog', catalogPath, '--input', input, '--output', profile);
+    const report = readFileSync(profile, 'utf8');
+    if (!report.includes('Ontology and imports closure in profile')) {
+        throw new Error(`${what} is outside OWL 2 DL:\n${report}`);
+    }
+}
+
 // Constructs no published pattern reaches, each of which once broke the
 // OWL 2 DL profile.
 const regressions = [
@@ -83,14 +93,8 @@ try {
 
         const stem = pattern.name.replace(/[^A-Za-z0-9_.-]/g, '_');
         const ontology = join(work, `${stem}.ttl`);
-        const profile = join(work, `${stem}-profile.txt`);
         writeFileSync(ontology, first.turtle);
-        robot('validate-profile', '--profile', 'DL', '--catalog', join(work, 'catalog-v001.xml'),
-            '--input', ontology, '--output', profile);
-        const report = readFileSync(profile, 'utf8');
-        if (!report.includes('Ontology and imports closure in profile')) {
-            throw new Error(`${pattern.name} is outside OWL 2 DL:\n${report}`);
-        }
+        inDL(ontology, join(work, 'catalog-v001.xml'), pattern.name);
         robot('reason', '--reasoner', 'hermit', '--catalog', join(work, 'catalog-v001.xml'),
             '--input', ontology, '--output', join(work, `${stem}-reasoned.owl`));
         if (pattern.name === 'historical-event-upper-bound') {
@@ -135,12 +139,7 @@ try {
         const moduleCatalog = join(work, `${stem}-catalog.xml`);
         writeFileSync(moduleCatalog, readFileSync(join(work, 'catalog-v001.xml'), 'utf8').replace('</catalog>',
             `  <uri name="${core.ontology}" uri="${stem}.ttl"/>\n</catalog>`));
-        const moduleProfile = join(work, `${stem}-snapshot-profile.txt`);
-        robot('validate-profile', '--profile', 'DL', '--catalog', moduleCatalog,
-            '--input', moduleFile, '--output', moduleProfile);
-        if (!readFileSync(moduleProfile, 'utf8').includes('Ontology and imports closure in profile')) {
-            throw new Error(`${pattern.name}'s snapshot layer is outside OWL 2 DL:\n${readFileSync(moduleProfile, 'utf8')}`);
-        }
+        inDL(moduleFile, moduleCatalog, `${pattern.name}'s snapshot layer`);
         robot('reason', '--reasoner', 'hermit', '--catalog', moduleCatalog,
             '--input', moduleFile, '--output', join(work, `${stem}-snapshot-reasoned.owl`));
         // The shapes are SHACL, not OWL: they are loaded by a SHACL processor
@@ -159,9 +158,56 @@ try {
             }
         }
     }
+
+    // The example corpus (fixtures/models): whole models of several packages
+    // and files, exported as the command line exports a workspace -- one
+    // ontology per header. ROBOT's report is not run on them: most carry no
+    // license, and an attribute written on two classes is labeled by its name
+    // on both, which the report reads as a duplicate label.
+    const corpus = join(here, 'fixtures', 'models');
+    const corpusSession = new TontoSession({ workspace: [corpus] });
+    const plain = await corpusSession.gufoFiles([corpus]);
+    const again = await corpusSession.gufoFiles([corpus]);
+    const layered = await corpusSession.gufoFiles([corpus], { snapshot: true });
+    const corpusErrors = [...plain.diagnostics, ...layered.diagnostics].filter(entry => entry.severity === 'error');
+    if (corpusErrors.length > 0 || plain.files.length === 0) {
+        throw new Error(`The example corpus did not export:\n${JSON.stringify(corpusErrors, undefined, 2)}`);
+    }
+    if (JSON.stringify(plain.files) !== JSON.stringify(again.files)) {
+        throw new Error('The example corpus did not export deterministically.');
+    }
+    const cores = new Map(plain.files.map(file => [file.file, file.content]));
+    const corpusCatalog = join(work, 'corpus-catalog.xml');
+    writeFileSync(corpusCatalog, readFileSync(join(work, 'catalog-v001.xml'), 'utf8').replace('</catalog>',
+        plain.files.map(file => `  <uri name="${file.ontology}" uri="corpus-${file.file}"/>\n`).join('') + '</catalog>'));
+    for (const file of layered.files) {
+        if (!file.snapshot && cores.get(file.file) !== file.content) {
+            throw new Error(`${file.file}: asking for the snapshot layer changed the core ontology.`);
+        }
+        writeFileSync(join(work, `corpus-${file.file}`), file.content);
+    }
+    for (const file of layered.files) {
+        const input = join(work, `corpus-${file.file}`);
+        if (file.shapes) {
+            if (pyshacl) {
+                const core = join(work, `corpus-${file.file.replace(/\.shapes\.ttl$/, '.ttl')}`);
+                const run = spawnSync(pyshacl, ['-s', input, '-e', core, '-i', 'rdfs', join(work, 'empty.ttl')],
+                    { encoding: 'utf8' });
+                if (run.status !== 0) {
+                    throw new Error(`${file.file} did not load:\n${run.stdout}${run.stderr}`);
+                }
+            }
+            continue;
+        }
+        inDL(input, corpusCatalog, file.file);
+        robot('reason', '--reasoner', 'hermit', '--catalog', corpusCatalog,
+            '--input', input, '--output', input.replace(/\.ttl$/, '-reasoned.owl'));
+    }
+
     complete = true;
     process.stdout.write('All tonto patterns are deterministic, OWL 2 DL, consistent, coherent with gUFO 1.0.0, and pass ROBOT\'s report; so are their snapshot layers, without it'
-        + (pyshacl ? ', and their shapes load.\n' : '. Set PYSHACL to load their shapes as well.\n'));
+        + (pyshacl ? ', and their shapes load' : '') + `. So are the ${plain.files.length} ontologies of the example corpus, without the report.`
+        + (pyshacl ? '\n' : ' Set PYSHACL to load the shapes as well.\n'));
 } finally {
     if (complete) rmSync(work, { recursive: true });
     else process.stderr.write(`Conformance artifacts retained at ${work}\n`);

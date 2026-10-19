@@ -7,9 +7,14 @@ repository's `tonto format`; generated Turtle, diagrams, and example READMEs
 are not part of the test corpus.
 
 The tests use `relators` and `qualities` for single-file parsing and AST
-checks, `scientific-publications` for a bundled ontology with package
-references, and every `.tonto` file here for formatting and AST round trips.
-They do not require every model to have zero warnings or hints.
+checks, and `scientific-publications` for a bundled ontology with package
+references. Every `.tonto` file here must be exactly what `tonto format`
+writes, and must come back to that from flattened or over-deep indentation;
+the corpus as one workspace must validate without errors; and
+`npm run test:gufo-conformance` exports each of its ontologies and checks the
+OWL with ROBOT and HermiT. The tests do not require every model to have zero
+warnings or hints. Reformat a file after editing it, or the formatting test
+fails on it.
 
 The `endurant-types`, `objects-and-parts`, `qualities`, `relators`, `events`,
 `situations`, and `higher-order-types` examples adapt models from

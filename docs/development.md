@@ -17,7 +17,7 @@ and [installation guide](installation.md). The language decisions are in
 | `packages/language/src/gufo.ts` and `exports.ts` | gUFO mapping and shared export writing |
 | `packages/extension/` | VS Code client, language-server bundle, commands, and agent integration |
 | `packages/mcp/` | MCP host for the shared language tools |
-| `packages/language/test/fixtures/models/` | Vendored example models for parsing and formatting tests |
+| `packages/language/test/fixtures/models/` | Vendored example models for parsing, formatting, validation, and gUFO conformance tests |
 
 The entry grammar is `packages/language/src/tonto.langium`. It imports the
 grammar fragments and generates the AST under
@@ -58,7 +58,8 @@ package, MCP server, and VS Code extension. `npm test` runs language tests.
 `npm run test:vscode` runs extension integration tests in a real VS Code
 instance and may download that instance. `npm run test:gufo-conformance`
 uses `robot` on `PATH`, or a ROBOT jar supplied through `ROBOT_JAR` with
-Java. CI uses ROBOT 1.9.10. It exports the pattern catalog, checks the resulting OWL with
+Java. CI uses ROBOT 1.9.10. It exports the pattern catalog and the example
+models in `packages/language/test/fixtures/models/`, checks the resulting OWL with
 ROBOT, and asks HermiT to reject inconsistent ontologies or unsatisfiable
 named classes.
 
