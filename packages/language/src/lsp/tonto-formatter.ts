@@ -1,7 +1,8 @@
 import type { AstNode, CstNode } from 'langium';
 import { CstUtils, GrammarUtils } from 'langium';
 import { AbstractFormatter, Formatting } from 'langium/lsp';
-import type { NodeFormatter } from 'langium/lsp';
+import type { FormattingAction, FormattingContext, NodeFormatter } from 'langium/lsp';
+import type { TextEdit } from 'vscode-languageserver';
 import type {
     ClassDeclaration, Datatype, Enumeration, GeneralizationSet, LegacyTextBlock, Model, Package
 } from '../generated/ast.js';
@@ -138,6 +139,12 @@ export class TontoFormatter extends AbstractFormatter {
         for (const keyword of ['genset', 'disjoint', 'complete', 'where', 'specializes', 'general', 'categorizer', 'specifics']) {
             formatter.keyword(keyword).append(Formatting.oneSpace());
         }
+        // A long set may continue on the next line. Whether it does is the
+        // author's choice, but the continuation is indented one level, so
+        // the same set does not have two formatted spellings.
+        for (const keyword of ['where', 'specializes']) {
+            formatter.keyword(keyword).prepend(Formatting.fit(Formatting.oneSpace(), Formatting.indent()));
+        }
         this.eachKeyword(node, formatter, ',', region =>
             region.prepend(Formatting.noSpace()).append(Formatting.oneSpace()));
 
@@ -191,6 +198,48 @@ export class TontoFormatter extends AbstractFormatter {
             }
         }
         close.prepend(Formatting.newLine());
+    }
+
+    /**
+     * Re-indents a comment standing on a line of its own.
+     *
+     * Langium's version measures the indentation already there with a tab
+     * counted as `tabSize` columns, then deletes that many *characters*. Two
+     * tabs read as eight columns, four too deep, and deleting four characters
+     * took both tabs: the comment went to column zero under a member indented
+     * four. One tab read as the right depth and was kept, so a body indented
+     * with tabs came out with its members in spaces and its comments in tabs.
+     * Here the whitespace in front of each line of the comment is replaced
+     * outright by the depth it should have, shifted as the first line is.
+     */
+    protected override createHiddenTextEdits(
+        previous: CstNode | undefined, hidden: CstNode, formatting: FormattingAction | undefined, context: FormattingContext
+    ): TextEdit[] {
+        const first = hidden.range.start.line;
+        if (previous && previous.range.end.line === first) {
+            return [];
+        }
+        const before = { start: { line: first, character: 0 }, end: hidden.range.start };
+        const move = this.findFittingMove(before, formatting?.moves ?? [], context);
+        const shift = this.getIndentationCharacterCount(context, move)
+            - this.getExistingIndentationCharacterCount(context.document.getText(before), context);
+        const unit = context.options.insertSpaces ? ' ' : '\t';
+        const edits: TextEdit[] = [];
+        for (let line = first; line <= hidden.range.end.line; line++) {
+            const text = context.document.getText({ start: { line, character: 0 }, end: { line: line + 1, character: 0 } });
+            const existing = /^[ \t]*/.exec(text)![0];
+            if (line > first && existing.length === text.replace(/\r?\n$/, '').length) {
+                continue;
+            }
+            const depth = Math.max(0, this.getExistingIndentationCharacterCount(existing, context) + shift);
+            if (unit.repeat(depth) !== existing) {
+                edits.push({
+                    range: { start: { line, character: 0 }, end: { line, character: existing.length } },
+                    newText: unit.repeat(depth)
+                });
+            }
+        }
+        return edits;
     }
 
     /**

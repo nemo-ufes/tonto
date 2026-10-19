@@ -371,15 +371,37 @@ describe('the example corpus', () => {
         expect(files.length).toBeGreaterThan(3);
     });
 
-    test.each(exampleFiles().map(path => [path.slice(examplesDir.length + 1), path]))(
-        '%s formats idempotently and parses to the same model',
+    // The corpus is stored formatted, so formatting it as it is asks the
+    // formatter to do nothing -- which says nothing about whether it can lay
+    // a model out. Its indentation flattened, or pushed two tabs deep, is a
+    // model the formatter has to rebuild, and the stored file is the answer.
+    // Spaces inside a line are not disturbed: the formatter leaves relation
+    // notation as the author spaced it.
+    const disturbed: Array<[string, (source: string) => string]> = [
+        ['with no indentation', source => source.replace(/^[ \t]+/gm, '')],
+        ['indented two tabs deep', source => source.replace(/^(?=[ \t]*\S)/gm, '\t\t')]
+    ];
+
+    test.each(files.map(path => [path.slice(examplesDir.length + 1), path]))(
+        '%s is stored as the formatter lays it out, and is restored from bad indentation',
         async (_name, path) => {
             const session = new OntologySession();
             const source = readFileSync(path, 'utf8');
-            const once = await session.formatText(source);
-            expect(await session.formatText(once)).toBe(once);
-            expect(JSON.stringify(await session.astOf(once))).toBe(JSON.stringify(await session.astOf(source)));
+            expect(await session.formatText(source)).toBe(source);
+            for (const [how, disturb] of disturbed) {
+                expect(await session.formatText(disturb(source)), how).toBe(source);
+            }
         },
         120_000
     );
+
+    test('validates without an error, every file with its workspace', async () => {
+        // Hints and warnings are the models' own business; an error is a
+        // check that turned on a model the language has always accepted.
+        const reported = await new TontoSession({ workspace: [examplesDir] }).validateFiles([examplesDir]);
+        const errors = reported.filter(entry => entry.severity === 'error');
+        expect(errors.map(entry => `${entry.file}:${entry.line} ${entry.code} ${entry.message}`)).toEqual([]);
+        // The corpus has hints of its own, so silence would mean nothing was read.
+        expect(reported.length).toBeGreaterThan(0);
+    }, 120_000);
 });

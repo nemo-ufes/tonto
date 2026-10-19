@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { AstUtils, EmptyFileSystem } from 'langium';
 import type { AstNode } from 'langium';
@@ -12,7 +9,6 @@ import type { Model } from '../src/generated/ast.js';
 const all = createTontoServices(EmptyFileSystem);
 const services = all.Tonto;
 const parse = parseHelper<Model>(services);
-const examplesDir = resolve(dirname(fileURLToPath(import.meta.url)), 'fixtures/models');
 
 async function format(source: string): Promise<string> {
     const document = await parse(source);
@@ -140,6 +136,17 @@ disjoint genset G where Student specializes Person`;
         expect(formatted).toContain('    /// When they were born.\n    /// Second line.\n    birthDate: date');
     });
 
+    test('and indents it with the member when the body is indented with tabs', async () => {
+        // Langium measured a tab as four columns and then deleted that many
+        // characters: two tabs read as four columns too deep, both went, and
+        // the comment landed at column zero above a member indented four.
+        for (const tabs of ['\t', '\t\t']) {
+            const formatted = await format(
+                `package p\ndatatype date\nkind Person {\n${tabs}/// When they were born.\n${tabs}birthDate: date\n}\n`);
+            expect(formatted).toContain('{\n    /// When they were born.\n    birthDate: date\n}');
+        }
+    });
+
     test('but leaves a trailing comment on the line it annotates', async () => {
         const formatted = await format('package p\ndatatype date\nkind Person {\nname: date // the given name\n}\n');
         expect(formatted).toContain('    name: date // the given name');
@@ -166,6 +173,16 @@ disjoint genset G where Student specializes Person`;
         expect(formatted).toContain('@comparative relation Person -- r -- Person derivedFrom Height, Weight');
     });
 
+    test('indents a generalization set continued on the next line, wherever the author put it', async () => {
+        const continued = 'package p\nkind Person\nphase Child specializes Person\nphase Adult specializes Person\n'
+            + 'disjoint complete genset byLifePhase\n    where Child, Adult\n    specializes Person\n';
+        expect(await format(continued.replace(/\n {4}/g, '\n'))).toBe(continued);
+        expect(await format(continued.replace(/\n {4}/g, '\n\t\t'))).toBe(continued);
+        // And one written on one line stays on one.
+        const single = continued.replace(/\n {4}/g, ' ');
+        expect(await format(single)).toBe(single);
+    });
+
     test('keeps relation refinements and modifiers that the example corpus does not use', async () => {
         const source = `package refinement
             kind Person {
@@ -189,14 +206,4 @@ disjoint genset G where Student specializes Person`;
         }
     });
 
-    test.each(['relators/relators.tonto', 'qualities/qualities.tonto',
-        'scientific-publications/authorship.tonto', 'scientific-publications/publishers.tonto'])(
-        'round-trips the %s example without changing its structure',
-        async fileName => {
-            const source = readFileSync(resolve(examplesDir, fileName), 'utf-8');
-            const formatted = await format(source);
-            expect(await parseErrors(formatted), formatted).toBe(0);
-            expect(await fingerprint(formatted)).toBe(await fingerprint(source));
-        }
-    );
 });
