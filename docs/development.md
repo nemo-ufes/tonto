@@ -74,6 +74,16 @@ bundled MCP server, and `out/tonto-hook.mjs` for Claude Code's hook. Building
 only `packages/language` does not refresh these bundles; use the root build
 before testing the extension.
 
+The VSIX is packaged with `--no-dependencies`, so the license files of the npm
+packages compiled into those bundles would not otherwise ship. The build
+writes `out/THIRD-PARTY-NOTICES.txt` from esbuild's metafile -- the packages
+actually bundled, not everything in `package-lock.json` -- with each one's
+license and notice text. It stops if a bundled package declares no license or
+one outside the permissive list in `packages/extension/third-party-notices.mjs`;
+adding a copyleft or proprietary dependency to the extension is a decision to
+make there, on purpose. Build tools such as `@vscode/vsce` are not bundled and
+are not checked.
+
 ## Local installation and releases
 
 There are two intentional workflows: install a development build locally,
@@ -142,9 +152,13 @@ not require either registry to be configured.
    the lockfile. It verifies consistency but does not publish anything;
    tagged-release CI runs the build and release checks.
 3. Review and commit the version changes and release-ready source.
-4. Create a signed, annotated tag at that commit and push it:
+4. Create a signed, annotated tag at that commit and push it. Check first that
+   the commit being tagged carries the version, since the workflow refuses a
+   tag that does not match:
 
    ```sh
+   git status --short                   # nothing left uncommitted
+   npm run versions:check -- v0.2.0
    git tag -s v0.2.0 -m "Release v0.2.0"
    git push origin v0.2.0
    ```

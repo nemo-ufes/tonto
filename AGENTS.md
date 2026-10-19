@@ -523,6 +523,10 @@ Breaking one of these fails a test rather than silently changing behavior.
   agree.
 - **Every rule has a worked example that still trips it.** `src/cli/rules.ts`
   is documentation that runs.
+- **What the extension bundles is permissively licensed.** The
+  extension build writes `out/THIRD-PARTY-NOTICES.txt` from what esbuild
+  bundled, and stops on a bundled package whose license is missing or not on
+  the list in `packages/extension/third-party-notices.mjs`.
 - **Every word-shaped keyword is usable as a name somewhere**, or the grammar
   test fails — that is how `of` came to be unwritable as an end name.
 - **The guide's sample model validates.** Documentation that does not parse is

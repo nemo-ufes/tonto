@@ -110,4 +110,6 @@ Giancarlo Guizzardi, Tiago Prince Sales and Claudenir M. Fonseca should be ackno
 
 ## License
 
-MIT
+MIT. The extension includes code from other open-source packages; their
+licenses and notices are in `out/THIRD-PARTY-NOTICES.txt` inside the installed
+extension.
