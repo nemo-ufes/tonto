@@ -424,14 +424,16 @@ Claude Code, a new Codex session): reloading does not stop one. Set
 `VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` to install into isolated
 directories; set `TONTO_VSCODE_CLI` for another launcher.
 
-Only pushing a signed, annotated `v<version>` tag to the remote starts a release.
-Prepare a version, review and commit it, then sign and push the tag. The
-`.github/workflows/release.yml` workflow verifies the configured signer and
-the version agreement before publishing the CLI to npm and the extension to
-the VS Code Marketplace, then creates the GitHub Release with its VSIX. The
-repository must have npm and Marketplace trusted publishing configured, plus
-the `RELEASE_SIGNING_PUBLIC_KEY` secret and
-`RELEASE_SIGNING_FINGERPRINT` variable. See
+Prepare a version, review and commit it, then create and push a signed,
+annotated `v<version>` tag. Pushing the tag does not start a release;
+`.github/workflows/release.yml` runs only when manually dispatched from GitHub
+Actions with that tag selected. It verifies the configured signer and version
+agreement, builds the CLI `.tgz` and extension VSIX, and attaches both to the
+GitHub Release. npm and Marketplace publishing are separate options and off by
+default. They require their respective trusted publishing configuration only
+when selected. A GitHub-only release still requires the
+`RELEASE_SIGNING_PUBLIC_KEY` secret and `RELEASE_SIGNING_FINGERPRINT`
+variable. See
 [`docs/development.md`](docs/development.md#local-installation-and-releases)
 for the complete workflow.
 
