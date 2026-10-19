@@ -3,6 +3,7 @@
 // (no reliance on node_modules/tonto-language being present at runtime).
 import * as esbuild from 'esbuild';
 import languagePackage from '../language/package.json' with { type: 'json' };
+import { writeThirdPartyNotices } from './third-party-notices.mjs';
 
 const watch = process.argv.includes('--watch');
 const minify = process.argv.includes('--minify');
@@ -14,6 +15,7 @@ const commonOptions = {
     target: 'node20',
     format: 'cjs',
     sourcemap: true,
+    metafile: true,
     minify,
     external: ['vscode']
 };
@@ -49,7 +51,8 @@ if (watch) {
     await Promise.all(contexts.map(ctx => ctx.watch()));
     console.log('esbuild watching for changes...');
 } else {
-    await Promise.all(contexts.map(ctx => ctx.rebuild()));
+    const results = await Promise.all(contexts.map(ctx => ctx.rebuild()));
     await Promise.all(contexts.map(ctx => ctx.dispose()));
-    console.log('esbuild build complete.');
+    const count = writeThirdPartyNotices(results.map(result => result.metafile), 'out/THIRD-PARTY-NOTICES.txt');
+    console.log(`esbuild build complete; notices for ${count} bundled packages.`);
 }
