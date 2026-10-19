@@ -68,34 +68,105 @@ Development Host. That launch builds the grammar and bundles first. For a
 tighter loop, use the Watch task and **Run Extension (no build)**, then reload
 the development host when a bundle changes.
 
-The extension has two bundles: `out/extension.cjs` for the host and
-`out/language-server.cjs` for the server. Building only
-`packages/language` does not refresh both extension bundles; use the root
-build before testing the extension.
+The extension build produces `out/extension.cjs` for the host,
+`out/language-server.cjs` for the language server, `out/tonto-mcp.mjs` for the
+bundled MCP server, and `out/tonto-hook.mjs` for Claude Code's hook. Building
+only `packages/language` does not refresh these bundles; use the root build
+before testing the extension.
 
-`npm run package` builds and packages a VSIX with a UTC build timestamp in
-its version and filename. Packaging changes the extension version, so avoid
-using it merely as a build check. `npm run install:local` packages the same
-way and installs the result with `code --install-extension`, to try the
-extension as a user gets it; set `VSCODE_CLI` for another launcher such as
-`code-insiders`, and reload open windows afterwards.
+## Local installation and releases
 
-## Releasing the CLI package
+There are two intentional workflows: install a development build locally,
+or publish a coordinated release. A local installation must not change the
+version selected for the next release. A published release gives the CLI,
+VS Code extension, and the MCP server bundled with that extension one shared
+SemVer version, because they deliver one language implementation to users.
 
-The standalone CLI is published as `tonto-language`; its npm version in
-`packages/language/package.json` follows SemVer and is independent of the
-timestamped VSIX version. Update that version for a release, run
-`npm install --package-lock-only`, and push a GitHub release tagged
-`tonto-language-v<version>` (for example, `tonto-language-v0.1.1`). The
-`Publish tonto CLI` workflow builds, tests, installs the packed tarball in a
-clean temporary project, then publishes it with npm trusted publishing and
-provenance.
+### Install a development build
 
-Before the first release, configure [`tonto-language` on npm to trust the
-GitHub Actions workflow](https://docs.npmjs.com/trusted-publishers/) named
-`.github/workflows/publish-language.yml` in this repository. No long-lived
-npm token is used. The workflow rejects a release whose tag does not match
-the package version.
+Use F5 and the Extension Development Host for the fastest edit/run loop. Use
+a packaged local install when checking the VSIX contents, installed
+activation, or the bundled MCP runtime:
+
+1. Save the changes to be exercised.
+2. Run `npm run dev:install`.
+3. The command builds the workspaces, creates a VSIX with a unique
+   development prerelease version (for example,
+   `0.1.74-dev.1792413120000`), and installs it. The same development version
+   identifies the extension and its bundled MCP. The version is generated
+   for the package; tracked release manifests remain unchanged.
+4. Reload the VS Code window. An installed package does not replace code
+   already loaded by an active extension host or MCP process.
+
+The local install uses the same extension identifier as the Marketplace
+extension. Use a dedicated VS Code profile or isolated directories to avoid
+replacing the copy used for normal work. For example, set
+`VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` before running the command;
+`packages/extension/install-vsix.mjs` passes them to the VS Code CLI. Set
+`VSCODE_CLI` to use another launcher, such as `code-insiders`. The existing
+`npm run install:local` command remains an alias for `npm run dev:install`.
+
+The development version is the next patch after the release version, with a
+UTC timestamp prerelease identifier. The package script temporarily stamps
+the VSIX manifest and restores it even if packaging or installation fails.
+The extension build embeds the same version in the MCP server's protocol
+metadata. The CLI and release manifests retain the stable version.
+
+To make the checkout's CLI available as the global `tonto` command, run
+`npm run dev:link-cli`. It builds `tonto-language` and runs `npm link` from
+that package, so global invocations use this checkout. Remove the global link
+with `npm uninstall --global tonto-language`; this restores whichever
+registry-installed version you use.
+
+### Prepare and publish a release
+
+The developer communicates release intent by selecting a version, reviewing
+the coordinated version change, and pushing a signed tag. Ordinary builds,
+commits, and local installs do not publish packages.
+
+1. Choose the SemVer release, for example `0.2.0`.
+2. Run `npm run release:prepare -- 0.2.0`. It sets the
+   canonical version in `packages/language/package.json` and synchronizes
+   the CLI, extension, bundled MCP, their exact workspace dependencies, and
+   the lockfile. It verifies consistency but does not publish anything;
+   tagged-release CI runs the build and release checks.
+3. Review and commit the version changes and release-ready source.
+4. Create a signed, annotated tag at that commit and push it:
+
+   ```sh
+   git tag -s v0.2.0 -m "Release v0.2.0"
+   git push origin v0.2.0
+   ```
+
+5. The release workflow verifies the tag signature and confirms that the tag
+   and all package versions agree. It builds and tests the tagged commit,
+   packages the npm CLI and VSIX, publishes them to npm and the VS Code
+   Marketplace, and creates a GitHub Release with the VSIX attached.
+
+The signed tag is the release authorization and source identity; the GitHub
+Release is the user-facing release page and download location. Protect the
+`v*` tag namespace and configure CI to accept only the trusted release
+signer. Build and package all artifacts before publication. Since npm and the
+Marketplace do not publish atomically, the workflow should report partial
+publication clearly and safely resume a release if one registry succeeds
+before the other.
+
+CI enforces version agreement with `npm run versions:check`. Before the first
+release, configure [`tonto-language` on npm to trust the GitHub Actions
+workflow](https://docs.npmjs.com/trusted-publishers/) in
+`.github/workflows/release.yml`, and configure trusted publishing for the
+`nemo-ufes` Marketplace publisher and that workflow. No long-lived publishing
+tokens are used. Add the armored release signing public key as the
+`RELEASE_SIGNING_PUBLIC_KEY` repository secret and its primary fingerprint as
+the `RELEASE_SIGNING_FINGERPRINT` repository variable. CI imports that key,
+checks the fingerprint, verifies the tag signature, and only then publishes.
+Protect the `v*` tag namespace so release tags require the intended
+maintainer approval.
+
+After release, CLI users update through npm. VS Code distributes the
+extension update through the Marketplace; that extension contains the
+matching MCP runtime. An MCP process already running in a VS Code window
+loads the new bundled runtime after that window reloads.
 
 ## Validation architecture
 

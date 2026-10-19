@@ -3,6 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { realpathSync } from 'node:fs';
 import { z } from 'zod';
+import mcpPackage from '../package.json' with { type: 'json' };
 import { TontoSession } from 'tonto-language';
 import { guide } from 'tonto-language/guide';
 import { catalog } from 'tonto-language/rules';
@@ -80,7 +81,7 @@ function inside(root: string, candidate: string): boolean {
     return path === '' || (!path.startsWith(`..${sep}`) && path !== '..' && !isAbsolute(path));
 }
 
-const server = new McpServer({ name: 'tonto', version: '0.1.0' });
+const server = new McpServer({ name: 'tonto', version: process.env.TONTO_VERSION ?? mcpPackage.version });
 
 for (const tool of TOOLS) {
     server.registerTool(tool.name, {

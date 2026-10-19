@@ -22,7 +22,11 @@ if (!existsSync(vsix)) {
 // shell -- and a shell splits an unquoted path at its spaces.
 const windows = process.platform === 'win32';
 const cli = process.env.VSCODE_CLI ?? 'code';
-const run = spawnSync(cli, ['--install-extension', windows ? `"${vsix}"` : vsix, '--force'],
+const args = [];
+if (process.env.VSCODE_USER_DATA_DIR) args.push('--user-data-dir', process.env.VSCODE_USER_DATA_DIR);
+if (process.env.VSCODE_EXTENSIONS_DIR) args.push('--extensions-dir', process.env.VSCODE_EXTENSIONS_DIR);
+args.push('--install-extension', vsix, '--force');
+const run = spawnSync(cli, windows ? args.map(argument => `"${argument.replaceAll('"', '\\"')}"`) : args,
     { stdio: 'inherit', shell: windows });
 if (run.error) {
     console.error(`Could not run "${cli}" (${run.error.message}). In VS Code, run "Shell Command: Install 'code' command in PATH", or set VSCODE_CLI.`);
