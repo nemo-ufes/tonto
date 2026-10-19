@@ -5,8 +5,10 @@ import { writeBeside } from '../exports.js';
 import type { GufoDiagnostic, GufoResult } from '../gufo.js';
 import { article } from '../validation/wording.js';
 import { fetchSummary, parseLocations } from '../publication/workspace.js';
+import packageJson from '../../package.json' with { type: 'json' };
 
 const SEVERITY = ['error', 'warning', 'information', 'hint'] as const;
+const VERSION = packageJson.version;
 
 export interface CheckOptions {
     locations?: Record<string, string>;
@@ -448,6 +450,9 @@ export async function printGuide(): Promise<number> {
 
 const USAGE = `tonto -- static analysis for the tonto modeling language
 
+  tonto --version             print the installed CLI version
+  tonto --help                show this help
+
   tonto fetch [paths...]     explicitly retrieve missing remote dependencies
     --refresh                atomically refresh the full retrieval closure
     --publication            retrieve original URLs, ignoring all mappings
@@ -544,6 +549,10 @@ async function unknownCodes(only: ReadonlySet<string>): Promise<string[]> {
 
 async function dispatch(argv: string[]): Promise<number> {
     const [command, ...rest] = argv;
+    if (command === '--version' || command === '-V') {
+        process.stdout.write(`tonto ${VERSION}\n`);
+        return 0;
+    }
     // Help after a command is help, not a file: `tonto format --help` was
     // read as a model called "--help" and answered that it could not be read.
     if (rest.includes('--help') || rest.includes('-h')) {

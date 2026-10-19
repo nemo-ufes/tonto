@@ -62,9 +62,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Pack and install the CLI outside the workspace
+        run: npm run test:package --workspace=tonto-language
       - name: Package without bumping the version
         working-directory: packages/extension
-        run: npx vsce package --no-dependencies -o tonto.vsix
+        run: npx vsce package --no-dependencies --no-rewrite-relative-links -o tonto.vsix
       - uses: actions/upload-artifact@v5
         with:
           name: tonto-vsix

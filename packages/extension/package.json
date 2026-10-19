@@ -1,18 +1,23 @@
 {
     "name": "tonto-vscode",
     "displayName": "tonto",
-    "version": "0.1.63+20261018212914",
+    "version": "0.1.73+20261019014107",
     "private": true,
-    "description": "tonto (OntoUML/UFO textual DSL) language support and gUFO/OWL export.",
+    "description": "tonto: a textual ontology modeling language",
     "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/jpalmeida/tontoredesign.git"
     },
     "type": "module",
-    "publisher": "tonto-redesign",
+    "publisher": "nemo-ufes",
+    "icon": "media/icon.png",
+    "galleryBanner": {
+        "color": "#141414",
+        "theme": "dark"
+    },
     "categories": [
-        "Programming Languages"
+        "Languages"
     ],
     "keywords": [
         "tonto",
@@ -38,7 +43,11 @@
                 "extensions": [
                     ".tonto"
                 ],
-                "configuration": "./language-configuration.json"
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./media/tonto-file.svg",
+                    "dark": "./media/tonto-file.svg"
+                }
             }
         ],
         "configurationDefaults": {
@@ -693,7 +702,8 @@
         "out",
         "templates",
         "language-configuration.json",
-        "syntaxes"
+        "syntaxes",
+        "README.md"
     ],
     "scripts": {
         "clean": "shx rm -rf out",
@@ -702,7 +712,8 @@
         "watch": "node esbuild.mjs --watch",
         "tools:sync": "node sync-tools.mjs",
         "test:integration": "node test/run.mjs",
-        "package": "node bump-version.mjs && npm run build && vsce package --no-dependencies -o tonto.vsix && node name-vsix.mjs"
+        "package": "node bump-version.mjs && npm run build && vsce package --no-dependencies --no-rewrite-relative-links -o tonto.vsix && node name-vsix.mjs",
+        "install:local": "npm run package && node install-vsix.mjs"
     },
     "dependencies": {
         "tonto-language": "0.1.0",

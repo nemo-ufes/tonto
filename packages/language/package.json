@@ -2,7 +2,16 @@
     "name": "tonto-language",
     "version": "0.1.0",
     "description": "Langium-based language implementation for tonto (OntoUML/UFO textual DSL): grammar, AST, validation, and LSP services.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jpalmeida/tontoredesign.git",
+        "directory": "packages/language"
+    },
+    "homepage": "https://github.com/jpalmeida/tontoredesign/tree/main/packages/language#readme",
     "license": "MIT",
+    "engines": {
+        "node": ">=22"
+    },
     "type": "module",
     "main": "out/index.js",
     "types": "out/index.d.ts",
@@ -28,11 +37,13 @@
     "scripts": {
         "clean": "shx rm -rf out",
         "prebuild": "npm run clean && npm run langium:generate",
+        "prepack": "npm run build",
         "build": "tsc -b tsconfig.json",
         "watch": "concurrently -n langium,tsc -c blue,green \"npm run langium:watch\" \"tsc -b tsconfig.json --watch\"",
         "langium:generate": "langium generate",
         "langium:watch": "langium generate --watch",
         "test": "vitest run",
+        "test:package": "node test/package-smoke.mjs",
         "test:watch": "vitest",
         "lint": "eslint src test"
     },
@@ -50,5 +61,13 @@
         "typescript": "^5.6.0",
         "typescript-eslint": "^8.15.0",
         "vitest": "^2.1.4"
-    }
+    },
+    "keywords": [
+        "tonto",
+        "ontouml",
+        "ufo",
+        "ontology",
+        "language-server",
+        "cli"
+    ]
 }

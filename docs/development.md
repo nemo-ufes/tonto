@@ -75,7 +75,27 @@ build before testing the extension.
 
 `npm run package` builds and packages a VSIX with a UTC build timestamp in
 its version and filename. Packaging changes the extension version, so avoid
-using it merely as a build check.
+using it merely as a build check. `npm run install:local` packages the same
+way and installs the result with `code --install-extension`, to try the
+extension as a user gets it; set `VSCODE_CLI` for another launcher such as
+`code-insiders`, and reload open windows afterwards.
+
+## Releasing the CLI package
+
+The standalone CLI is published as `tonto-language`; its npm version in
+`packages/language/package.json` follows SemVer and is independent of the
+timestamped VSIX version. Update that version for a release, run
+`npm install --package-lock-only`, and push a GitHub release tagged
+`tonto-language-v<version>` (for example, `tonto-language-v0.1.1`). The
+`Publish tonto CLI` workflow builds, tests, installs the packed tarball in a
+clean temporary project, then publishes it with npm trusted publishing and
+provenance.
+
+Before the first release, configure [`tonto-language` on npm to trust the
+GitHub Actions workflow](https://docs.npmjs.com/trusted-publishers/) named
+`.github/workflows/publish-language.yml` in this repository. No long-lived
+npm token is used. The workflow rejects a release whose tag does not match
+the package version.
 
 ## Validation architecture
 

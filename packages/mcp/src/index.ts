@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { relative, resolve } from 'node:path';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { realpathSync } from 'node:fs';
 import { z } from 'zod';
 import { TontoSession } from 'tonto-language';
 import { guide } from 'tonto-language/guide';
@@ -49,7 +50,20 @@ const host: ToolHost = {
     antiPatterns,
     files(paths) {
         if (!paths || paths.length === 0) throw new ToolError('Give either source or paths.');
-        return paths.map(path => resolve(path));
+        const root = realpathSync(workspace ?? process.cwd());
+        return paths.map(path => {
+            if (isAbsolute(path)) throw new ToolError('Path must be relative to the workspace.');
+            const resolved = resolve(root, path);
+            if (!inside(root, resolved)) throw new ToolError(`Path "${path}" must stay inside the workspace.`);
+            let canonical: string;
+            try {
+                canonical = realpathSync(resolved);
+            } catch {
+                throw new ToolError(`Path "${path}" does not exist in the workspace.`);
+            }
+            if (!inside(root, canonical)) throw new ToolError(`Path "${path}" must stay inside the workspace.`);
+            return canonical;
+        });
     },
     session: () => session,
     sessionWith: options => new TontoSession({ workspace, antiPatterns, ...options }),
@@ -59,6 +73,12 @@ const host: ToolHost = {
     },
     display: file => relative(workspace ?? process.cwd(), file) || file
 };
+
+/** Paths stay inside the workspace after resolving both `..` and symlinks. */
+function inside(root: string, candidate: string): boolean {
+    const path = relative(root, candidate);
+    return path === '' || (!path.startsWith(`..${sep}`) && path !== '..' && !isAbsolute(path));
+}
 
 const server = new McpServer({ name: 'tonto', version: '0.1.0' });
 

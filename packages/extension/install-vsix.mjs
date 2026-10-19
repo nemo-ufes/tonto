@@ -1,0 +1,34 @@
+// Installs the package `npm run package` just wrote into the local VS Code,
+// to see the extension as a user gets it: a file the .vsix leaves out, the
+// Details tab, the servers running from the installed location. For anything
+// else, F5 is the faster loop.
+//
+// `code` is VS Code's command-line launcher; VSCODE_CLI names another, such
+// as `code-insiders` or `cursor`.
+import { existsSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const directory = new URL('.', import.meta.url);
+const pkg = JSON.parse(readFileSync(new URL('package.json', directory), 'utf8'));
+const vsix = fileURLToPath(new URL(`tonto-${pkg.version}.vsix`, directory));
+if (!existsSync(vsix)) {
+    console.error(`${basename(vsix)} does not exist; run "npm run package" first.`);
+    process.exit(1);
+}
+
+// On Windows the launcher is a .cmd script, which Node runs only through a
+// shell -- and a shell splits an unquoted path at its spaces.
+const windows = process.platform === 'win32';
+const cli = process.env.VSCODE_CLI ?? 'code';
+const run = spawnSync(cli, ['--install-extension', windows ? `"${vsix}"` : vsix, '--force'],
+    { stdio: 'inherit', shell: windows });
+if (run.error) {
+    console.error(`Could not run "${cli}" (${run.error.message}). In VS Code, run "Shell Command: Install 'code' command in PATH", or set VSCODE_CLI.`);
+    process.exit(1);
+}
+if (run.status !== 0) {
+    process.exit(run.status ?? 1);
+}
+console.log('Installed. Run "Developer: Reload Window" in each open VS Code window to load it.');

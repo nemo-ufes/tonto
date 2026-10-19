@@ -7,13 +7,13 @@
  */
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
-const { existsSync, readFileSync, writeFileSync } = require('node:fs');
+const { existsSync, readFileSync, unlinkSync, writeFileSync } = require('node:fs');
 const path = require('node:path');
 const vscode = require('vscode');
 
 const workspace = process.env.TONTO_TEST_WORKSPACE;
 const hiring = vscode.Uri.file(path.join(workspace, 'hiring.tonto'));
-const extension = () => vscode.extensions.getExtension('tonto-redesign.tonto-vscode');
+const extension = () => vscode.extensions.getExtension('nemo-ufes.tonto-vscode');
 
 /** Polls until `check` returns something, or fails after `ms`. */
 async function eventually(check, ms = 60_000, what = 'the condition') {
@@ -82,9 +82,16 @@ describe('the tonto extension in VS Code', () => {
 
     it('validates the active model when a tool names no file', async () => {
         await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(hiring));
-        const text = await invoke('tonto_validate');
-        assert.match(text, /role-without-relator/);
-        assert.doesNotMatch(text, /^tonto tool error/);
+        const unrelated = vscode.Uri.file(path.join(workspace, 'unrelated.tonto'));
+        writeFileSync(unrelated.fsPath, 'ontology unrelated\nkind Student specializes Missing\n');
+        try {
+            const text = await invoke('tonto_validate');
+            assert.match(text, /role-without-relator/);
+            assert.doesNotMatch(text, /Missing/);
+            assert.doesNotMatch(text, /^tonto tool error/);
+        } finally {
+            unlinkSync(unrelated.fsPath);
+        }
     });
 
     it('refuses a model with unsaved changes rather than read it stale', async () => {

@@ -48,6 +48,14 @@ describe('the tools agents call, defined once for every host', () => {
         expect(JSON.stringify(validated.data)).toContain('"changes"');
     });
 
+    test('do not return a partial AST as structured data when the source has errors', async () => {
+        const result = await runTool('tonto_ast', { source: 'package p\nkind' }, hostFor());
+        expect(result.isError).toBe(true);
+        expect(result.text).toContain('partial tree is not returned as a model');
+        expect(result.data).toHaveProperty('diagnostics');
+        expect(result.data).not.toHaveProperty('ast');
+    });
+
     test('say what is wrong with a call rather than failing', async () => {
         const host = hostFor();
         expect(await runTool('tonto_validate', { source: 'ontology a', paths: ['a.tonto'] }, host)).toMatchObject({ isError: true, text: expect.stringContaining('not both') });
