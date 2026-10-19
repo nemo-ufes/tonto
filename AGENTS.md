@@ -367,6 +367,16 @@ which is whether the edit was a step backwards.
   or does not, so what would be a `quality` or an `intrinsicMode` of one is
   written as `const` attributes of it instead, and the language says so with
   the property it would have written.
+- **A changing quality modeled as several qualities.** A quality changing
+  value over time does not, by itself, mean there are multiple qualities.
+  Model the quality as persisting while its value varies. For example, a
+  person has exactly one weight quality whose value is mutable. If the domain
+  calls for it, model the act of measuring the quality as an event, or model
+  its value during a period as a situation.
+- **Optional cardinality used for unknown information.** `[0..1]` means zero
+  or one relationship is allowed; `[0..*]` means zero or more. Use a lower
+  bound of zero only when the domain allows the relationship to be absent. It
+  does not mean the relationship may exist but is unknown.
 - **A collection that only grows.** `addOnly` on a multi-valued end, or
   `addOnly` on a multi-valued attribute, says values may be added and never
   removed or replaced -- UML 1.x's word for it, beside the `frozen` that
