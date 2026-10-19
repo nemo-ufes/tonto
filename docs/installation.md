@@ -177,6 +177,11 @@ The command creates or updates five project files:
   such hook, so for Codex the instruction to validate is what remains.
 
 Existing instruction text, MCP servers, hooks, and Codex settings are preserved.
+The generated agent runtime configuration is machine-specific and is kept out
+of this repository: `.mcp.json`, `.claude/`, and `.codex/` are ignored by Git.
+Each developer should run the setup command on their own machine to generate
+paths to their installed VS Code runtime and extension storage.
+
 The generated MCP entries use local paths to this machine's VS Code runtime
 and extension storage. Codex uses the session's working directory as the model
 workspace, so moving a project on the same machine does not require changing
