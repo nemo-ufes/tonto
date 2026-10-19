@@ -11,6 +11,7 @@ function hostFor(workspace?: string): ToolHost {
     const session = new TontoSession({ workspace });
     return {
         antiPatterns: false,
+        version: '0.1.73',
         files(paths) {
             if (!paths) throw new ToolError('Give either source or paths.');
             return paths.map(path => resolve(workspace ?? '.', path));

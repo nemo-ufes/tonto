@@ -7,6 +7,7 @@ out/
 .tonto/
 packages/language/src/generated/
 packages/extension/syntaxes/tonto.tmLanguage.json
+packages/language/.tonto-dev-version
 
 # Papers are read from here, not redistributed from here: they are other
 # people's publications, under their own licenses.

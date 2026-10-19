@@ -60,6 +60,8 @@ export const VSCODE_CAPABILITIES: ToolCapabilities = {
 
 /** What a call needs from the host it runs in. */
 export interface ToolHost extends ToolCapabilities {
+    /** The version of this host's running Tonto implementation. */
+    readonly version: string;
     /**
      * The files a call is about. Given paths, the host resolves them; given
      * none, it supplies its default -- the editor's active model -- or
@@ -182,6 +184,14 @@ function some<T>(all: readonly T[], render: (one: T) => string, limit = 20): str
 }
 
 export const TOOLS: readonly ToolDefinition[] = [
+    {
+        name: 'tonto_version',
+        title: 'The running Tonto version',
+        progress: 'Reading the running Tonto version…',
+        description: () => 'Use to identify which Tonto release or local development build this host is running. Returns its version.',
+        input: { type: 'object', properties: {} },
+        run: async (_input, host) => ({ text: `Tonto ${host.version}`, data: { version: host.version } })
+    },
     {
         name: 'tonto_guide',
         title: 'The tonto language in one page',

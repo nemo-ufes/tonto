@@ -150,7 +150,7 @@ final `#` or `/`).
 
 Codex and Claude Code do not consume tools registered through another
 extension's generic VS Code language-model API. They do support local MCP
-servers, so tonto bundles its own seventeen-tool MCP server in the VSIX and
+servers, so tonto bundles its own eighteen-tool MCP server in the VSIX and
 configures it for both agents. Codex reads its server from
 `.codex/config.toml`; Claude reads `.mcp.json`.
 
@@ -219,7 +219,7 @@ The extension exposes tools for:
 - holding draft files that are not on disk yet, listing the workspace's
   ontologies, and retrieving imported ontologies.
 
-They are the same seventeen tools the MCP server gives Codex and Claude Code,
+They are the same eighteen tools the MCP server gives Codex and Claude Code,
 with the same parameters and answers. Inside the editor, a call that names no
 file is about the active tonto file, or else the open workspace, and files
 with unsaved changes are refused rather than read stale.

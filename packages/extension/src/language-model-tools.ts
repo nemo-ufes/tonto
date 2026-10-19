@@ -22,7 +22,7 @@ export function registerLanguageModelTools(context: ExtensionContext): void {
         const tool: LanguageModelTool<Input> = {
             async invoke(options, token) {
                 if (token.isCancellationRequested) throw new vscode.CancellationError();
-                const answer = await runTool(definition.name, options.input ?? {}, editorHost(sessions));
+                const answer = await runTool(definition.name, options.input ?? {}, editorHost(sessions, context.extension.packageJSON.version));
                 if (token.isCancellationRequested) throw new vscode.CancellationError();
                 return new vscode.LanguageModelToolResult([
                     new vscode.LanguageModelTextPart(answer.isError ? `tonto tool error: ${answer.text}` : answer.text)
@@ -35,10 +35,11 @@ export function registerLanguageModelTools(context: ExtensionContext): void {
 }
 
 /** The editor as a host: its folders, its active model, its unsaved files. */
-function editorHost(sessions: Sessions): ToolHost {
+function editorHost(sessions: Sessions, version: string): ToolHost {
     const antiPatterns = vscode.workspace.getConfiguration('tonto').get<boolean>('antiPatterns', false);
     return {
         ...VSCODE_CAPABILITIES,
+        version,
         files(paths) {
             const targets = paths ? paths.map(resolveWorkspacePath) : resolveTargets();
             ensureSaved(workspaceFor(targets));

@@ -3,8 +3,9 @@
 // Details tab, the servers running from the installed location. For anything
 // else, F5 is the faster loop.
 //
-// `code` is VS Code's command-line launcher; VSCODE_CLI names another, such
-// as `code-insiders` or `cursor`.
+// `code` is VS Code's command-line launcher; TONTO_VSCODE_CLI names another,
+// such as `code-insiders` or `cursor`. Not VSCODE_CLI: VS Code's integrated
+// terminal sets that to "1" for its own use, and running "1" fails.
 import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { basename } from 'node:path';
@@ -21,7 +22,7 @@ if (!existsSync(vsix)) {
 // On Windows the launcher is a .cmd script, which Node runs only through a
 // shell -- and a shell splits an unquoted path at its spaces.
 const windows = process.platform === 'win32';
-const cli = process.env.VSCODE_CLI ?? 'code';
+const cli = process.env.TONTO_VSCODE_CLI || 'code';
 const args = [];
 if (process.env.VSCODE_USER_DATA_DIR) args.push('--user-data-dir', process.env.VSCODE_USER_DATA_DIR);
 if (process.env.VSCODE_EXTENSIONS_DIR) args.push('--extensions-dir', process.env.VSCODE_EXTENSIONS_DIR);
@@ -29,10 +30,11 @@ args.push('--install-extension', vsix, '--force');
 const run = spawnSync(cli, windows ? args.map(argument => `"${argument.replaceAll('"', '\\"')}"`) : args,
     { stdio: 'inherit', shell: windows });
 if (run.error) {
-    console.error(`Could not run "${cli}" (${run.error.message}). In VS Code, run "Shell Command: Install 'code' command in PATH", or set VSCODE_CLI.`);
+    console.error(`Could not run "${cli}" (${run.error.message}). In VS Code, run "Shell Command: Install 'code' command in PATH", or set TONTO_VSCODE_CLI.`);
     process.exit(1);
 }
 if (run.status !== 0) {
     process.exit(run.status ?? 1);
 }
-console.log('Installed. Run "Developer: Reload Window" in each open VS Code window to load it.');
+console.log('Installed. Run "Developer: Reload Window" in each open VS Code window to load it,');
+console.log('then restart each agent\'s tonto MCP server: /mcp in Claude Code, or a new Codex session.');
