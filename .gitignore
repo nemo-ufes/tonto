@@ -8,6 +8,8 @@ out/
 packages/language/src/generated/
 packages/extension/syntaxes/tonto.tmLanguage.json
 packages/language/.tonto-dev-version
+.claude/
+.codex/
 
 # Papers are read from here, not redistributed from here: they are other
 # people's publications, under their own licenses.
