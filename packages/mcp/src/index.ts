@@ -40,6 +40,7 @@ if (workspace) process.chdir(workspace);
  */
 const antiPatterns = process.argv.slice(2).includes('--anti-patterns');
 const session = new TontoSession({ workspace, antiPatterns });
+const serverVersion = process.env.TONTO_VERSION ?? mcpPackage.version;
 
 /**
  * The tools, as tonto-language/tools defines them for every host: the same
@@ -49,6 +50,7 @@ const session = new TontoSession({ workspace, antiPatterns });
  */
 const host: ToolHost = {
     antiPatterns,
+    version: serverVersion,
     files(paths) {
         if (!paths || paths.length === 0) throw new ToolError('Give either source or paths.');
         const root = realpathSync(workspace ?? process.cwd());
@@ -81,7 +83,7 @@ function inside(root: string, candidate: string): boolean {
     return path === '' || (!path.startsWith(`..${sep}`) && path !== '..' && !isAbsolute(path));
 }
 
-const server = new McpServer({ name: 'tonto', version: process.env.TONTO_VERSION ?? mcpPackage.version });
+const server = new McpServer({ name: 'tonto', version: serverVersion });
 
 for (const tool of TOOLS) {
     server.registerTool(tool.name, {

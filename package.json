@@ -13,6 +13,7 @@
         "package": "npm run build && npm run package --workspace=tonto-vscode",
         "dev:install": "node scripts/dev-install.mjs",
         "dev:link-cli": "node scripts/link-cli.mjs",
+        "dev:unlink-cli": "node scripts/unlink-cli.mjs",
         "install:local": "npm run dev:install",
         "watch": "npm run watch --workspaces --if-present",
         "test": "npm run test --workspace=tonto-language",

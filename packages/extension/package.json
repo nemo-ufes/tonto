@@ -31,6 +31,7 @@
     },
     "main": "./out/extension.cjs",
     "activationEvents": [
+        "onCommand:tonto.addAgentInstructions",
         "workspaceContains:**/*.tonto"
     ],
     "contributes": {
@@ -192,6 +193,18 @@
             }
         ],
         "languageModelTools": [
+            {
+                "name": "tonto_version",
+                "displayName": "The running Tonto version",
+                "toolReferenceName": "tontoVersion",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "The running Tonto version",
+                "modelDescription": "Use to identify which Tonto release or local development build this host is running. Returns its version.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {}
+                }
+            },
             {
                 "name": "tonto_guide",
                 "displayName": "The tonto language in one page",

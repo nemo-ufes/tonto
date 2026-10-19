@@ -8,7 +8,18 @@ import { fetchSummary, parseLocations } from '../publication/workspace.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
 const SEVERITY = ['error', 'warning', 'information', 'hint'] as const;
-const VERSION = packageJson.version;
+let VERSION = packageJson.version;
+// The marker sits beside a linked checkout's own files. Bundled as CommonJS
+// into the extension, this module has no URL of its own -- import.meta is
+// empty -- and resolving against it would fail the extension's activation.
+if (import.meta.url) {
+    try {
+        const developmentVersion = readFileSync(new URL('../../.tonto-dev-version', import.meta.url), 'utf8').trim();
+        if (developmentVersion) VERSION = developmentVersion;
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+}
 
 export interface CheckOptions {
     locations?: Record<string, string>;

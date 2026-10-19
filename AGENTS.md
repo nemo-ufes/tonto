@@ -212,7 +212,7 @@ rather than about text. A declaration's `///` documentation comes with it as
 
 `packages/mcp` exposes the same things as tools. They are defined once, in
 `packages/language/src/tools.ts`, and VS Code's language-model tools are the
-same seventeen. Start it with a workspace
+same eighteen. Start it with a workspace
 directory if the model has `import`s:
 
     npx tonto-mcp /path/to/models
@@ -227,6 +227,7 @@ protocol at all.
 
 | | |
 |---|---|
+| `tonto_version` | the version this Tonto host is running, including a local development suffix |
 | `tonto_guide` | the language in one page, before writing any of it |
 | `tonto_validate` | text *or* files, each diagnostic with its repairs |
 | `tonto_repair` | every repair its rule forces, applied at once |
@@ -400,6 +401,7 @@ which is whether the edit was a step backwards.
     npm run versions:check         # CLI, extension, MCP and lockfile agree
     npm run dev:install            # unique local VSIX build, then install
     npm run dev:link-cli           # build and link the CLI globally
+    npm run dev:unlink-cli         # remove the global CLI link and local version marker
     npm run release:prepare -- 0.2.0 # synchronize release versions; does not publish
 
 CI runs build, test and lint on Linux, Windows and macOS, the VS Code tests
@@ -415,10 +417,12 @@ stale.
 extension, bundled MCP package, their exact `tonto-language` dependencies and
 `package-lock.json` move with it; `npm run versions:check` enforces this in
 CI. `npm run dev:install` uses a unique next-patch prerelease version in the
-VSIX and MCP protocol metadata, then restores the tracked extension manifest.
-Reload VS Code windows after installing so active extension hosts and MCP
-processes restart. Set `VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` to
-install into isolated directories; set `VSCODE_CLI` for another launcher.
+VSIX and MCP protocol metadata, then restores the tracked extension `package.json`.
+Reload VS Code windows after installing so active extension hosts restart
+and restage the MCP runtime, then restart each agent's MCP server (`/mcp` in
+Claude Code, a new Codex session): reloading does not stop one. Set
+`VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` to install into isolated
+directories; set `TONTO_VSCODE_CLI` for another launcher.
 
 Only pushing a signed, annotated `v<version>` tag to the remote starts a release.
 Prepare a version, review and commit it, then sign and push the tag. The

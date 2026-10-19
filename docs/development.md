@@ -92,31 +92,40 @@ activation, or the bundled MCP runtime:
 2. Run `npm run dev:install`.
 3. The command builds the workspaces, creates a VSIX with a unique
    development prerelease version (for example,
-   `0.1.74-dev.1792413120000`), and installs it. The same development version
+   `0.1.74-dev.1792413120000.12345`), and installs it. The same development version
    identifies the extension and its bundled MCP. The version is generated
-   for the package; tracked release manifests remain unchanged.
+   for the package; the tracked `package.json` files remain unchanged.
 4. Reload the VS Code window. An installed package does not replace code
-   already loaded by an active extension host or MCP process.
+   already loaded by an active extension host. On activation the new
+   extension copies its MCP runtime to the stable path that `.mcp.json` and
+   `.codex/config.toml` name.
+5. Restart each agent's tonto MCP server: `/mcp` in Claude Code, or a new
+   Codex session. Agents start the server once per session and keep the code
+   it loaded; reloading the window does not stop it, and a server the agent
+   started while the window was reloading may have read the previous copy.
+   `tonto_version` says which build answered.
 
 The local install uses the same extension identifier as the Marketplace
 extension. Use a dedicated VS Code profile or isolated directories to avoid
 replacing the copy used for normal work. For example, set
 `VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` before running the command;
 `packages/extension/install-vsix.mjs` passes them to the VS Code CLI. Set
-`VSCODE_CLI` to use another launcher, such as `code-insiders`. The existing
+`TONTO_VSCODE_CLI` to use another launcher, such as `code-insiders`. The existing
 `npm run install:local` command remains an alias for `npm run dev:install`.
 
 The development version is the next patch after the release version, with a
-UTC timestamp prerelease identifier. The package script temporarily stamps
-the VSIX manifest and restores it even if packaging or installation fails.
+timestamp and process id in its prerelease identifiers. The package script
+temporarily stamps the extension's `package.json` and restores it even if packaging or installation fails.
 The extension build embeds the same version in the MCP server's protocol
-metadata. The CLI and release manifests retain the stable version.
+metadata. The tracked `package.json` files keep the stable version.
 
 To make the checkout's CLI available as the global `tonto` command, run
-`npm run dev:link-cli`. It builds `tonto-language` and runs `npm link` from
-that package, so global invocations use this checkout. Remove the global link
-with `npm uninstall --global tonto-language`; this restores whichever
-registry-installed version you use.
+`npm run dev:link-cli`. It builds `tonto-language`, writes a local development
+version marker, and runs `npm link` from that package, so global invocations
+use this checkout. `tonto --version` includes the generated development
+prerelease version while the link is active. Run `npm run dev:unlink-cli` to
+remove both the global link and the marker; install a registry version again
+with `npm install --global tonto-language` if desired.
 
 ### Prepare and publish a release
 

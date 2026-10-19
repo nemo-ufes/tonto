@@ -85,7 +85,7 @@ the authored model.
 
 ## Agent tools
 
-`packages/language/src/tools.ts` defines seventeen tools once. The extension
+`packages/language/src/tools.ts` defines eighteen tools once. The extension
 exposes them as VS Code language-model tools and through its bundled local MCP
 server for Codex and Claude Code. They cover the guide, validation, rules,
 patterns, completion, repairs, formatting, AST, structural review, edit

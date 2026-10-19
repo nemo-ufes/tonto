@@ -2,22 +2,14 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { developmentVersion } from './dev-version.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const extensionManifest = resolve(root, 'packages/extension/package.json');
 const languageManifest = resolve(root, 'packages/language/package.json');
 const originalManifest = readFileSync(extensionManifest);
 const language = JSON.parse(readFileSync(languageManifest, 'utf8'));
-const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(language.version);
-
-if (!match) {
-    console.error(`The CLI release version must be stable SemVer before a local install; got ${language.version}.`);
-    process.exit(1);
-}
-
-const [, major, minor, patch] = match;
-const timestamp = Date.now().toString();
-const devVersion = `${major}.${minor}.${Number(patch) + 1}-dev.${timestamp}`;
+const devVersion = developmentVersion(language.version);
 let restored = false;
 
 function restoreManifest() {
