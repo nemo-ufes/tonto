@@ -48,5 +48,5 @@ running `npm install`.
 
 ## Commands
 
-Run `tonto --help` for the command list and options. See the [language guide](https://github.com/jpalmeida/tontoredesign/blob/main/AGENTS.md#writing-tonto)
+Run `tonto --help` for the command list and options. See the [language guide](https://github.com/nemo-ufes/tonto/blob/main/AGENTS.md#writing-tonto)
 for the modeling workflow, rules, and patterns.
