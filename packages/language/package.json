@@ -4,10 +4,10 @@
     "description": "Langium-based language implementation for tonto (OntoUML/UFO textual DSL): grammar, AST, validation, and LSP services.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/jpalmeida/tontoredesign.git",
+        "url": "https://github.com/nemo-ufes/tonto.git",
         "directory": "packages/language"
     },
-    "homepage": "https://github.com/jpalmeida/tontoredesign/tree/main/packages/language#readme",
+    "homepage": "https://github.com/nemo-ufes/tonto/tree/main/packages/language#readme",
     "license": "MIT",
     "engines": {
         "node": ">=22"

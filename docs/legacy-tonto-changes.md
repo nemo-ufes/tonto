@@ -1,7 +1,7 @@
 # From legacy tonto
 
 Here **legacy tonto** means versions before 1.0.0 of the
-[original tonto project](https://github.com/nemo-ufes/tonto). This is a
+[original tonto project](https://github.com/nemo-ufes/tonto-legacy). This is a
 history of changes relevant when reading an older model or integrating with
 older tooling. The [language guide](../AGENTS.md#read-the-language-first) and
 `npx tonto guide` describe the current language; the

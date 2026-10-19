@@ -102,7 +102,7 @@ The extension also exposes the language guide, validation, repairs, patterns, an
 
 ## Acknowledgements
 
-Matheus Lenke Coutinho and João Paulo A. Almeida are the original designers of tonto. This project reimplements the grammar, validation and other features of the [legacy tonto project](https://github.com/nemo-ufes/tonto), which was mainly authored by Matheus Lenke Coutinho at the [NEMO Ontology & Conceptual Modeling research group](https://nemo.inf.ufes.br) at the Federal University of Espírito Santo (UFES), Brazil.
+Matheus Lenke Coutinho and João Paulo A. Almeida are the original designers of tonto. This project reimplements the grammar, validation and other features of the [legacy tonto project](https://github.com/nemo-ufes/tonto-legacy), which was mainly authored by Matheus Lenke Coutinho at the [NEMO Ontology & Conceptual Modeling research group](https://nemo.inf.ufes.br) at the Federal University of Espírito Santo (UFES), Brazil.
 
 tonto's language design, concrete syntax, and OntoUML/UFO semantics are the work of the [NEMO Ontology & Conceptual Modeling research group](https://nemo.inf.ufes.br), in cooperation with the [Semantics, Cybersecurity & Services (SCS) group](https://www.utwente.nl/en/eemcs/scs/) throughout various research projects, which have received among others the support of CNPq, CAPES and FAPES over the years.
 
