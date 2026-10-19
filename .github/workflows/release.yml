@@ -1,0 +1,93 @@
+name: Release tonto
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Verify and publish all artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Verify signed release tag
+        env:
+          RELEASE_SIGNING_PUBLIC_KEY: ${{ secrets.RELEASE_SIGNING_PUBLIC_KEY }}
+          RELEASE_SIGNING_FINGERPRINT: ${{ vars.RELEASE_SIGNING_FINGERPRINT }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          test -n "$RELEASE_SIGNING_PUBLIC_KEY" || { echo "Set the RELEASE_SIGNING_PUBLIC_KEY repository secret."; exit 1; }
+          test -n "$RELEASE_SIGNING_FINGERPRINT" || { echo "Set the RELEASE_SIGNING_FINGERPRINT repository variable."; exit 1; }
+          printf '%s\n' "$RELEASE_SIGNING_PUBLIC_KEY" | gpg --batch --import
+          gpg --batch --with-colons --fingerprint |
+            awk -F: '$1 == "fpr" { print $10 }' |
+            grep -Fx "$RELEASE_SIGNING_FINGERPRINT"
+          git verify-tag "$RELEASE_TAG"
+      - run: npm ci
+      - name: Check lockstep versions and tag
+        run: npm run versions:check -- "$GITHUB_REF_NAME"
+      - run: npm run build
+      - run: npm test
+      - run: npm run lint
+      - name: Run VS Code integration checks
+        run: xvfb-run -a npm run test:integration --workspace=tonto-vscode
+      - name: Pack and install the CLI outside the workspace
+        run: npm run test:package --workspace=tonto-language
+      - name: Create the npm package artifact
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          mkdir -p release-artifacts
+          npm pack --workspace=tonto-language --pack-destination release-artifacts
+      - name: Package the VS Code extension
+        run: npm run package --workspace=tonto-vscode
+      - name: Publish CLI to npm
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          VERSION="${RELEASE_VERSION#v}"
+          TARBALL="release-artifacts/tonto-language-${VERSION}.tgz"
+          EXPECTED_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "$TARBALL" | openssl base64 -A)"
+          if PUBLISHED_INTEGRITY="$(npm view "tonto-language@${VERSION}" dist.integrity 2>/dev/null)"; then
+            test "$PUBLISHED_INTEGRITY" = "$EXPECTED_INTEGRITY" || {
+              echo "tonto-language@${VERSION} already exists with different contents."; exit 1;
+            }
+            echo "Matching tonto-language@${VERSION} is already published; skipping."
+          else
+            npm publish "$TARBALL" --access public --provenance
+          fi
+      - name: Publish extension to the Visual Studio Marketplace
+        working-directory: packages/extension
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: npx @vscode/vsce publish --packagePath "tonto-${RELEASE_VERSION#v}.vsix" --oidc --skip-duplicate
+      - name: Create or update the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          VSIX="packages/extension/tonto-${RELEASE_VERSION#v}.vsix"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$VSIX" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$VSIX" --generate-notes --title "tonto ${RELEASE_VERSION#v}"
+          fi

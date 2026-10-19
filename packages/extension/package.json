@@ -1,7 +1,7 @@
 {
     "name": "tonto-vscode",
     "displayName": "tonto",
-    "version": "0.1.73+20261019014107",
+    "version": "0.1.73",
     "private": true,
     "description": "tonto: a textual ontology modeling language",
     "license": "MIT",
@@ -712,11 +712,10 @@
         "watch": "node esbuild.mjs --watch",
         "tools:sync": "node sync-tools.mjs",
         "test:integration": "node test/run.mjs",
-        "package": "node bump-version.mjs && npm run build && vsce package --no-dependencies --no-rewrite-relative-links -o tonto.vsix && node name-vsix.mjs",
-        "install:local": "npm run package && node install-vsix.mjs"
+        "package": "npm run build && vsce package --no-dependencies --no-rewrite-relative-links -o tonto.vsix && node name-vsix.mjs"
     },
     "dependencies": {
-        "tonto-language": "0.1.0",
+        "tonto-language": "0.1.73",
         "vscode-languageclient": "^10.1.0"
     },
     "devDependencies": {

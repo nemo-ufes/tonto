@@ -397,6 +397,10 @@ which is whether the edit was a step backwards.
     npm run lint
     npm run test:vscode            # the extension in a real VS Code (downloads one)
     npm run test:gufo-conformance  # uses robot on PATH, or ROBOT_JAR and Java
+    npm run versions:check         # CLI, extension, MCP and lockfile agree
+    npm run dev:install            # unique local VSIX build, then install
+    npm run dev:link-cli           # build and link the CLI globally
+    npm run release:prepare -- 0.2.0 # synchronize release versions; does not publish
 
 CI runs build, test and lint on Linux, Windows and macOS, the VS Code tests
 on Linux under xvfb, and the conformance check with ROBOT; it also packages
@@ -406,6 +410,26 @@ run by hand; their scoring is tested with the rest.
 `npm run build` runs `langium:generate` first. After editing anything under
 `packages/language/src/grammar/`, build before testing or the generated AST is
 stale.
+
+`packages/language/package.json` is the canonical SemVer version. The
+extension, bundled MCP package, their exact `tonto-language` dependencies and
+`package-lock.json` move with it; `npm run versions:check` enforces this in
+CI. `npm run dev:install` uses a unique next-patch prerelease version in the
+VSIX and MCP protocol metadata, then restores the tracked extension manifest.
+Reload VS Code windows after installing so active extension hosts and MCP
+processes restart. Set `VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` to
+install into isolated directories; set `VSCODE_CLI` for another launcher.
+
+Only pushing a signed, annotated `v<version>` tag to the remote starts a release.
+Prepare a version, review and commit it, then sign and push the tag. The
+`.github/workflows/release.yml` workflow verifies the configured signer and
+the version agreement before publishing the CLI to npm and the extension to
+the VS Code Marketplace, then creates the GitHub Release with its VSIX. The
+repository must have npm and Marketplace trusted publishing configured, plus
+the `RELEASE_SIGNING_PUBLIC_KEY` secret and
+`RELEASE_SIGNING_FINGERPRINT` variable. See
+[`docs/development.md`](docs/development.md#local-installation-and-releases)
+for the complete workflow.
 
 ### Layout
 

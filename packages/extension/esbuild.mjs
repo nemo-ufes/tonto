@@ -2,9 +2,11 @@
 // package's out/ directory, so the packaged extension is self-contained
 // (no reliance on node_modules/tonto-language being present at runtime).
 import * as esbuild from 'esbuild';
+import languagePackage from '../language/package.json' with { type: 'json' };
 
 const watch = process.argv.includes('--watch');
 const minify = process.argv.includes('--minify');
+const mcpVersion = process.env.TONTO_VERSION ?? languagePackage.version;
 
 const commonOptions = {
     bundle: true,
@@ -30,6 +32,7 @@ const contexts = await Promise.all([
     esbuild.context({
         ...commonOptions,
         format: 'esm',
+        define: { 'process.env.TONTO_VERSION': JSON.stringify(mcpVersion) },
         entryPoints: ['../mcp/src/index.ts'],
         outfile: 'out/tonto-mcp.mjs'
     }),
