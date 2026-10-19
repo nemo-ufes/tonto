@@ -170,8 +170,26 @@ try {
     const again = await corpusSession.gufoFiles([corpus]);
     const layered = await corpusSession.gufoFiles([corpus], { snapshot: true });
     const corpusErrors = [...plain.diagnostics, ...layered.diagnostics].filter(entry => entry.severity === 'error');
-    if (corpusErrors.length > 0 || plain.files.length === 0) {
+    if (corpusErrors.length > 0) {
         throw new Error(`The example corpus did not export:\n${JSON.stringify(corpusErrors, undefined, 2)}`);
+    }
+    const expectedOntologies = [
+        'astronomy', 'demo', 'derivations', 'endurant-types', 'employment-relators',
+        'football-events', 'higher-order-types', 'objects-and-parts', 'palm-oil-supply',
+        'patient-situations', 'retail-qualities', 'scientific-publications'
+    ];
+    const expectedCoreFiles = expectedOntologies.map(name => `${name}.ttl`);
+    const expectedLayeredFiles = expectedOntologies.flatMap(name => [
+        `${name}.ttl`, `${name}.snapshot.ttl`, `${name}.shapes.ttl`
+    ]);
+    for (const [files, expected, label] of [
+        [plain.files, expectedCoreFiles, 'core'],
+        [layered.files, expectedLayeredFiles, 'snapshot']
+    ]) {
+        const actual = files.map(file => file.file).sort();
+        if (JSON.stringify(actual) !== JSON.stringify(expected.sort())) {
+            throw new Error(`The example corpus ${label} export has ${JSON.stringify(actual)}; expected ${JSON.stringify(expected)}.`);
+        }
     }
     if (JSON.stringify(plain.files) !== JSON.stringify(again.files)) {
         throw new Error('The example corpus did not export deterministically.');
