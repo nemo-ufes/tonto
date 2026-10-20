@@ -361,13 +361,11 @@ export const TOOLS: readonly ToolDefinition[] = [
         name: 'tonto_hold',
         title: 'Hold a file beside the draft',
         progress: 'Holding a tonto file…',
-        description: () => 'Use while drafting a multi-file model before its files are saved. A held draft is source kept '
-            + 'in Tonto\'s temporary MCP workspace, not a file on disk; later calls resolve references against it, so '
-            + 'drafts can refer to classes in other unsaved files. Name each file by its path without ".tonto" (for example, '
-            + 'an ontology file held as "shop" that bundles "sales from <sales/orders.tonto>" finds a package held as '
-            + '"sales/orders"). Returns the held file\'s own diagnostics. After saving the files, release each held draft '
-            + 'by calling this tool with its name and no source, so validation sees the saved workspace without temporary '
-            + 'copies. Omit source to release a file; omit name to list what is held.',
+        description: () => 'Use for unsaved files in a multi-file draft that refer to one another. Holds source in Tonto\'s '
+            + 'temporary MCP workspace, not on disk, so later calls resolve cross-file references. Name each file by its '
+            + 'path without ".tonto". For example, hold an ontology as "shop" that bundles "sales from '
+            + '<sales/orders.tonto>", then hold its package as "sales/orders". Returns diagnostics for that file. '
+            + 'After saving, call without source to release a held file; omit name to list held files.',
         input: {
             type: 'object',
             properties: {
