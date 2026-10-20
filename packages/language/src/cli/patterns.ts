@@ -69,7 +69,7 @@ disjoint complete genset lifeStages where Child, Adult specializes Person`],
 
 ['role-and-relator', 'Relators and roles', 'A role, and the relator that founds it',
  'A type something is only while it stands in a relationship.',
- 'This is the pattern that explains roles: a role is anti-rigid because the relator that founds it can cease to exist. Every role should have a relator behind it -- if you cannot name one, what you have is a phase or a subkind. Read the two ends in opposite directions: the mediated end is `[1]` and `(const)`, since one employment binds one employee and cannot be moved to another; the relator end is `[1..*]`, since being founded means at least one, and nothing stops a person holding two jobs. A `[1]` there would say they cannot.',
+ 'This is the pattern that explains roles: a role is anti-rigid because the relator that founds it can cease to exist. Every role should have a relator behind it -- if you cannot name one, what you have is a phase or a subkind. The `[1]` beside `Employee` says each employment binds exactly one employee, and `(const)` says it cannot switch employees. The `[1..*]` beside `Employment` says each employee participates in one or more employments; nothing stops a person holding two jobs. A `[1]` there would say they cannot.',
  'Guizzardi 2005, §4.4; Guizzardi et al. 2018 (UFO relators); OntoUML "Relator" pattern',
  `kind Person
 kind Organization

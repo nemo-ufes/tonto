@@ -3484,9 +3484,9 @@ describe('a quantity is extensional, so its parts are essential', () => {
 });
 
 describe('what the meta-properties amount to, read off the types', () => {
-    test('a collective has at most one sub-collection of a kind', async () => {
+    test('a collective has exactly one sub-collection of a kind', async () => {
         await expectError('package p\ncollective Orchestra {\n@subCollection [1] <>-- [2..*] Strings\n}\ncollective Strings',
-            /at most one sub-collection of a kind/);
+            /exactly one sub-collection of a kind/);
         await expectNoErrors('package p\ncollective Orchestra {\n@subCollection [1] <>-- [1] Strings\n@subCollection [1] <>-- [1] Brass\n}\ncollective Strings\ncollective Brass');
     });
 

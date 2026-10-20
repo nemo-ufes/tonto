@@ -340,9 +340,12 @@ derived this way: what happened stays happened, so it never lapses.
 ## Parthood
 
 The diamond states parthood and marks the whole: \`<>--\` puts it at the source,
-\`--<>\` at the target. A parthood stereotype needs one. Whether a part may be
-shared is the multiplicity at the whole end -- \`[1]\` or \`[0..1]\` says it may
-not, and an omitted bound means \`[1]\`.
+\`--<>\` at the target. A parthood stereotype needs one. The bound beside an
+end counts instances of that end's type for each instance at the opposite end.
+So the bound at the whole end counts how many wholes each part may belong to:
+\`[0..1]\` allows no whole or one, while \`[1]\` (also the omitted bound)
+requires exactly one. A bound above one there allows sharing. The bound at the
+part end counts how many parts each whole has.
 \`const\` at the part end says the whole cannot come to have a different part;
 with a lower bound of one that is an *essential* part -- but only if the whole
 is rigid. Under a \`role\` or a \`phase\` the same words say the part is fixed
@@ -351,9 +354,10 @@ whole end reads the other way round: inseparable, or immutable-whole.
 
 A quantity is extensional -- change a part and it is a different portion -- so
 every part of one is essential: the part end is \`const\`, there is exactly
-one sub-quantity of a kind, and it is never shared. A collective has at most
-one sub-collection of a kind; whether its *members* are essential is the
-model's to say, by writing \`const\` at the member end or not.
+one sub-quantity of a kind, and it is never shared. For each declared kind,
+Tonto requires a collective to have exactly one sub-collection, with \`[1]\` at
+the part end. Whether its *members* are essential is the model's to say, by
+writing \`const\` at the member end or not.
 
 Most parthood stays within one nature. These crossings are admitted:
 
@@ -361,9 +365,12 @@ ${parthood.map(pair => `  ${pair}`).join('\n')}
 
 ## Multiplicity and end decorators
 
-\`[1]\` \`[0..1]\` \`[1..*]\` \`[*]\`; an omitted multiplicity means exactly one. Whether a part may be shared is the
-multiplicity at the whole end. An end is written in parentheses: the flags first, then a name, then what it
-draws from -- \`(const father)\`, \`(addOnly children)\`,
+Use \`[n]\` for exactly \`n\`, or \`[lower..upper]\` for a range; \`*\` means
+unbounded, so \`[*]\` is shorthand for \`[0..*]\`. An omitted multiplicity
+means exactly one. For parthood, the whole-end bound counts wholes per part,
+and the part-end bound counts parts per whole. An end is written in
+parentheses: the flags first, then a name, then what it draws from --
+\`(const father)\`, \`(addOnly children)\`,
 \`(staff subsets Team.members)\`. The flags are written in the order
 \`const addOnly\`.
 
@@ -475,8 +482,9 @@ ambiguity.
 ### Changing qualities and optional bounds
 
 A quality whose value changes over time can remain one quality; a changing
-value alone does not imply multiple qualities. When appropriate, model an act
-of measurement as an event or the value during a period as a situation.
+value alone does not imply multiple qualities. When appropriate in the domain,
+model an act of measurement as an event or the value during a period as a
+situation.
 
 A lower bound of zero means the relationship is allowed to be absent. It
 does not mean that the relationship exists but its value is unknown:

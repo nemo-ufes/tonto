@@ -144,7 +144,8 @@ export function checkSubQuantityIsExclusive(relation: Relation, accept: Validati
 /**
  * "Any collective can have at maximum one subcollection of a given type",
  * and "the cardinality constraints in the association end relative to the part
- * is one and exactly one" (§8.3).
+ * is one and exactly one" (§8.3). Tonto therefore requires `[1]` here, not
+ * merely an upper bound of one.
  *
  * A collective is maximal in the same way a quantity is: a sub-collection is
  * obtained by refining the unifying relation, and the refinement picks out one
@@ -167,7 +168,7 @@ export function checkSubCollectionMultiplicity(relation: Relation, accept: Valid
     }
     accept(
         'error',
-        `A collective has at most one sub-collection of a kind, since a sub-collection refines its unifying relation: this end is "[1]", not ${formatBounds(cardinality)}.`,
+        `A collective has exactly one sub-collection of a kind, since a sub-collection refines its unifying relation: this end is "[1]", not ${formatBounds(cardinality)}.`,
         { node: cardinality, code: 'sub-collection-multiplicity' }
     );
 }

@@ -55,10 +55,16 @@ does not identify an end. A relation written inside a class and one written
 at package level express the same association; the parser keeps their source
 forms distinct.
 
-The diamond marks the whole in a parthood association. Thus `Wheel --<> Car`
-reads “a wheel is part of a car.” The bound at the whole end says whether a
-part can be shared; a second diamond does not. Omitted multiplicity means
-`[1]`.
+The diamond marks the whole in a parthood association. Thus `Wheel --<> [1] Car`
+reads “a wheel is part of one car.” A bound at either end counts instances of
+that end's type for each instance at the opposite end: the bound beside the
+whole counts how many wholes each part belongs to, and the bound beside the
+part counts how many parts each whole has. So `[0..1]` at the whole end allows
+a part to have no whole or one whole; a bound above one allows sharing. A
+second diamond does not express sharing. Omitted multiplicity means `[1]`.
+
+Write `[n]` for exactly `n`, or `[lower..upper]` for a range; `*` is an
+unbounded upper bound, and `[*]` is shorthand for `[0..*]`.
 
 End modifiers sit in parentheses before the name: `(const father)`,
 `(addOnly children)`, `(staff subsets Team.members)`. `const` says a link does

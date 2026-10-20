@@ -303,10 +303,11 @@ which is whether the edit was a step backwards.
 - **Parthood without the diamond.** `@componenthood` states parthood; `--`
   states an ordinary association. Use `<>--`, and remember the diamond marks
   the *whole*: `kind Wheel { --<> [1] Car }` reads "a wheel is part of a car".
-  Whether a part may be shared is the multiplicity at the whole end, not a
-  second diamond — `[1]` or `[0..1]` says it may not, and an omitted bound
-  means `[1]`: exactly one whole, so the part is neither shared nor
-  free-standing. That is a claim like any other, and it is read: a required
+  The bound at the whole end counts wholes per part; the bound at the part end
+  counts parts per whole. `[1]` or `[0..1]` at the whole end disallows sharing;
+  `[0..1]` allows a part with no whole, while an omitted bound means `[1]`:
+  exactly one whole. A bound above one at the whole end allows sharing. That is
+  a claim like any other, and it is read: a required
   chain that never stops is an error at either end —
   `parthood-descends-forever` where every whole needs a part, and
   `parthood-climbs-forever` where every part needs a whole, so
