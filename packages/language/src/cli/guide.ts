@@ -441,5 +441,60 @@ address with another street is another address, so each is \`const\`.
 
 Nothing requires them. A class that never says when its instances began is
 well formed, and no check asks it to.
+
+## Further modeling cautions
+
+A role is founded on a relationship that may cease to exist: an \`Employee\`,
+for example, is an \`Employee\` while an employment holds. Model it as a \`role\`
+and name the relator behind it. A \`subkind\` is a rigid subdivision. When a
+relator mediates what is modeled as a \`subkind\`, \`subkind-founded-on-relator\`
+signals that the model may be treating a relationship-dependent type as
+rigid. A relator binds at least two things.
+
+A non-sortal needs an \`of\` clause naming the natures it classifies. When
+\`non-sortal-natures-unstated\` applies, its repair can suggest natures from
+the types beneath it.
+
+### Parthood chains
+
+Required parthood must not continue forever. \`parthood-descends-forever\`
+reports a chain in which every whole requires another part; for example,
+a required part of every node, recursively. \`parthood-climbs-forever\` reports
+a chain in which every part requires another whole. A tree can have a root
+with no parent and leaves with no children: \`[0..1] <>-- [*]\`.
+
+### Inherited references
+
+Within a class, \`subsets parts\` and \`specializes hasPart\` can refer to
+inherited declarations; the nearest declaration in the inheritance chain is
+used. If two inheritance branches declare the same name without relating
+those declarations, qualify the reference, for example
+\`ComplexPhysicalObject.parts\`. \`short-reference-ambiguous\` reports this
+ambiguity.
+
+### Changing qualities and optional bounds
+
+A quality whose value changes over time can remain one quality; a changing
+value alone does not imply multiple qualities. When appropriate, model an act
+of measurement as an event or the value during a period as a situation.
+
+A lower bound of zero means the relationship is allowed to be absent. It
+does not mean that the relationship exists but its value is unknown:
+\`[0..1]\` permits zero or one link, and \`[0..*]\` permits zero or more.
+
+### Legacy syntax and corrections
+
+End modifiers are written in parentheses, such as \`(const father)\` or
+\`(addOnly children)\`, not in braces. For attributes, modifiers precede the
+type, as in \`nicknames: ordered string [*]\`.
+
+\`mode\` is deprecated. Use \`intrinsicMode\` or \`extrinsicMode\` when one of
+those natures is meant, or a \`category\` with the appropriate \`of\` clause when
+the class spans them. The \`deprecated-stereotype\` diagnostic offers a
+replacement supported by the model.
+
+When an unresolved name is close to one already in scope, prefer the
+suggested correction—for example, \`Person\` for a one-letter misspelling—
+over creating a new declaration.
 `;
 }
