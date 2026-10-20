@@ -197,9 +197,9 @@ export const TOOLS: readonly ToolDefinition[] = [
         title: 'The tonto language in one page',
         progress: 'Reading the tonto language guide…',
         description: () => 'Read before writing tonto, or when unsure which stereotype, nature or association fits. '
-            + 'The language in one page, generated from the tables the validator reads: every stereotype and what it '
-            + 'classifies, the principles that decide specialization, every association signature, and ontologies, '
-            + 'packages and files.',
+            + 'The language in one page: every stereotype and what it classifies, the natures, the principles that '
+            + 'decide specialization, every association signature, and ontologies, packages and files. The catalogs '
+            + 'are generated from the tables the validator reads; the principles are prose beside them.',
         input: { type: 'object', properties: {} },
         run: async () => ({ text: guide() })
     },

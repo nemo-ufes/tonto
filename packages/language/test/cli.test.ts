@@ -166,8 +166,12 @@ describe('the command-line interface', () => {
         expect(tables.relationEnds.constitution).toContain('process:event');
     });
 
-    test('the guide is generated from the tables, so it cannot drift', async () => {
+    test('the guide\'s catalogs are printed from the tables', async () => {
         const { out } = await tonto('guide');
+        // The catalogs below are printed from the tables. The banner must not
+        // claim that of the principles, which are prose.
+        expect(out).toContain('The principles are prose beside them.');
+        expect(out).not.toContain('Generated from the tables the validator reads.');
         expect(out).toContain('@membership           collective → substantial');
         expect(out).toContain('@instantiation        anything → type');
         expect(out).toContain('abstractum (abstract-individuals)');
@@ -176,6 +180,24 @@ describe('the command-line interface', () => {
         // collective's alone.
         expect(out).toContain('collective → functional-complex');
         expect(out).not.toContain('process → event');
+    });
+
+    test('principle 5 says what the taxonomy enforces, not a stricter founding rule', async () => {
+        // The principle list is prose, not read off a table, so this is what
+        // keeps it from forbidding a historicalRole under a role or a phase.
+        const { out } = await tonto('guide');
+        expect(out.replace(/\s+/g, ' ')).toContain(
+            'an intrinsic condition cannot narrow one that depends on something else');
+        expect(out).not.toContain('only a relationally founded one');
+    });
+
+    test('an anti-rigid type classifies what can change, not only endurants', async () => {
+        // Prose again, and it had drifted from the natures: a process does not
+        // endure, and an anti-rigid type may classify one all the same.
+        const { out } = await tonto('guide');
+        expect(out.replace(/\s+/g, ' ')).toContain(
+            'an anti-rigid one only what can change — an endurant, or a process, whose constitution varies in time');
+        expect(out).not.toContain('an anti-rigid one only endurants');
     });
 
     test('and its worked example validates', async () => {

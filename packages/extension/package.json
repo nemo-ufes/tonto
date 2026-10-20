@@ -211,7 +211,7 @@
                 "toolReferenceName": "tontoGuide",
                 "canBeReferencedInPrompt": true,
                 "userDescription": "The tonto language in one page",
-                "modelDescription": "Read before writing tonto, or when unsure which stereotype, nature or association fits. The language in one page, generated from the tables the validator reads: every stereotype and what it classifies, the principles that decide specialization, every association signature, and ontologies, packages and files.",
+                "modelDescription": "Read before writing tonto, or when unsure which stereotype, nature or association fits. The language in one page: every stereotype and what it classifies, the natures, the principles that decide specialization, every association signature, and ontologies, packages and files. The catalogs are generated from the tables the validator reads; the principles are prose beside them.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {}

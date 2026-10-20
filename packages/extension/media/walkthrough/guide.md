@@ -3,8 +3,8 @@
 The guide covers every class stereotype, ontological nature, specialization
 principle, and association signature.
 
-It is generated from the tables used by validation and completion. When the
-language changes, the guide changes with it.
+Its catalogs are printed from the tables used by validation and completion,
+so those change with the language. The principles beside them are prose.
 
 When you are ready to write, place the cursor on a blank line between
 declarations and [insert a validated modeling pattern](command:tonto.insertPattern). Its

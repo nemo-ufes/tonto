@@ -1,10 +1,11 @@
 # Language design notes
 
 This document explains decisions behind the current tonto language. For the
-vocabulary and admissible combinations, use the generated language guide
-(**Tonto: Open Language Guide** or `npx tonto guide`). Its tables are the
-validator's tables; this document is about the reasons for particular shapes,
-not a second specification.
+vocabulary and admissible combinations, use the language guide
+(**Tonto: Open Language Guide** or `npx tonto guide`). Its catalogs are
+printed from the validator's tables; the principles beside them are prose.
+This document is about the reasons for particular shapes, not a second
+specification.
 
 If you are coming from OWL or Protégé, [From OWL and Protégé to
 tonto](from-owl-and-protege.md) introduces the modeling workflow before these

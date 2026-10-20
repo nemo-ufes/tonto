@@ -44,7 +44,7 @@ relator Employment {
 
 The `ontology` header makes this a one-file ontology. `kind` gives `Person` and `Organization` their own identity. `Employee` and `Employer` are roles their instances play while an employment holds. Each `Employment` binds exactly one employee and one employer: the `[1]` at each mediated end says that. The `[1..*]` at each relator end says an employee or employer participates in at least one employment and may participate in several. `worksFor` is the material relation derived from that relator. A `///` line immediately above a declaration documents its domain meaning; VS Code shows that text on hover and in completion proposals.
 
-For the complete vocabulary, run **Tonto: Open Language Guide** in VS Code or `npx tonto guide` in a source checkout. The guide is generated from the same tables used by validation and completion. If you know OWL or Protégé, start with [From OWL and Protégé to tonto](docs/from-owl-and-protege.md). The [modeling instructions](AGENTS.md#writing-tonto) explain the edit, check, and format loop; [language design notes](docs/language-design.md) explain why particular constructs have their current form.
+For the complete vocabulary, run **Tonto: Open Language Guide** in VS Code or `npx tonto guide` in a source checkout. Its catalogs are printed from the same tables used by validation and completion; the principles beside them are prose. If you know OWL or Protégé, start with [From OWL and Protégé to tonto](docs/from-owl-and-protege.md). The [modeling instructions](AGENTS.md#writing-tonto) explain the edit, check, and format loop; [language design notes](docs/language-design.md) explain why particular constructs have their current form.
 
 ## Model with feedback
 

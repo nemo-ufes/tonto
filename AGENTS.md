@@ -21,10 +21,11 @@ ontology.
 
     npx tonto guide
 
-One generated page: every class stereotype with what its instances may be,
-the ontological natures, the six principles that decide specialization, and
-what each of the 23 association stereotypes relates. It is printed from the
-same tables the validator reads, so it cannot be out of date.
+One page. The stereotype lists, the nature names, and what each of the 23
+association stereotypes relates are printed from the tables the validator
+reads, so those cannot be out of date. The six principles, and what an
+anti-rigid type classifies, are prose beside that. They can drift; the
+guide tests lock the sentences that already did.
 
 Read it before writing. Most diagnostics are a stereotype whose natures do not
 match what it is being used for, and the guide is the shortest statement of
@@ -541,6 +542,11 @@ Breaking one of these fails a test rather than silently changing behavior.
   test fails — that is how `of` came to be unwritable as an end name.
 - **The guide's sample model validates.** Documentation that does not parse is
   worse than none.
+- **The guide's catalogs come from the tables; its principles are prose.**
+  Stereotype lists, nature names, and association signatures are printed
+  from what the validator reads. The six principles are written.
+  `test/cli.test.ts` locks the sentences that had drifted from
+  `whyNotSpecialize` and the nature table.
 - **Everything is spelled in US English** -- modeling, catalog, color --
   in code, comments, messages, tests and documents alike. Quotations and
   titles keep their own spelling. `test/vocabulary.test.ts` checks it.
@@ -558,6 +564,12 @@ Breaking one of these fails a test rather than silently changing behavior.
   transcriptions and are now consequences; the transcriptions live on as test
   fixtures. If you find yourself adding a row, ask what principle it follows
   from.
+- **Keep the principle, and cross-check the prose.** Do not add a listed
+  case when the answer follows from the tables. When a guide sentence, a
+  diagnostic, or a comment says what the language allows, read it against
+  the function or table that decides it. If they disagree, the structure
+  wins and the sentence is the bug. The guide's catalogs are printed from
+  those tables; its principles are written, so they can drift.
 - **Domain examples must be true.** An example that parses but says a car is
   part of an engine teaches the wrong thing; the examples are the first tonto
   anyone reads.

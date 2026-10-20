@@ -20,7 +20,8 @@ installing the VSIX does not need a separate Node.js installation. See
 On a blank package-level line, **Tonto: Insert Modeling Pattern...** opens
 the validated pattern catalog. The inserted domain names are linked: changing
 a declaration updates its references in the inserted model. **Tonto: Open
-Language Guide** displays the guide generated from the validator's tables.
+Language Guide** displays the guide. Its catalogs are printed from the
+validator's tables; the principles beside them are prose.
 
 Quick fixes distinguish a rule-forced edit from a modeling choice. A duplicate
 token or an impossible bound can be repaired automatically. A phase with no

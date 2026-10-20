@@ -3,7 +3,7 @@ import { RELATION_STEREOTYPES } from '../validation/relation-stereotypes.js';
 import { STEREOTYPES, SUGGESTED_CLASS_STEREOTYPES } from '../validation/stereotype-model.js';
 
 /**
- * The language in one page, generated from the same tables the checks read.
+ * The language in one page.
  *
  * Written for something that has to hold the whole language in its context
  * before writing any of it -- a person new to tonto, or a model doing the
@@ -11,8 +11,11 @@ import { STEREOTYPES, SUGGESTED_CLASS_STEREOTYPES } from '../validation/stereoty
  * edges and the end-nature table five hundred pairs; it is now six principles
  * and twenty-three category signatures, which fits.
  *
- * Everything here is read off the tables, so it cannot drift from what the
- * validator enforces.
+ * The catalogs -- stereotype lists, nature names, association signatures --
+ * are read off the tables, so those cannot drift from what the validator
+ * enforces. The principles and the other prose are written. A sentence that
+ * disagrees with the tables is a bug; the guide tests lock the ones that
+ * already did.
  */
 
 type Stereotype = keyof typeof STEREOTYPES;
@@ -52,8 +55,10 @@ export function guide(): string {
         .map(([whole, part]) => `${whole} → ${part}`);
     return `# tonto in one page
 
-Generated from the tables the validator reads. Run \`tonto check <path>\` to
-validate, \`--json\` for machine-readable diagnostics with their repairs.
+Stereotype lists, nature names, and association signatures are generated
+from the tables the validator reads. The principles are prose beside them.
+Run \`tonto check <path>\` to validate, \`--json\` for machine-readable
+diagnostics with their repairs.
 
 ## Shape of a file
 
@@ -207,8 +212,8 @@ A class may be restricted with \`of\`: \`category Agent of functional-complexes\
 ${Object.keys(TABLE_NATURE_NAMES).join(' · ')}
 
 \`objects\` abbreviates functional-complexes, collectives and quantities.
-A rigid type may classify anything; an anti-rigid one only endurants — nothing
-outside them can stop being an instance and go on existing.
+A rigid type may classify anything; an anti-rigid one only what can change —
+an endurant, or a process, whose constitution varies in time.
 
 ## What may specialize what
 
@@ -218,8 +223,10 @@ Six principles decide every case:
   2. A rigid or semi-rigid type does not sit under an anti-rigid one.
   3. An ultimate sortal tops its lineage: it specializes no sortal.
   4. The two must share an ontological nature.
-  5. Among anti-rigid types, only a relationally founded one (role, roleMixin)
-     may narrow a differently founded one (phase, historicalRole).
+  5. Among anti-rigid types, an intrinsic condition cannot narrow one that
+     depends on something else. A phase or phaseMixin may narrow only another
+     intrinsic type; a role, roleMixin, historicalRole or historicalRoleMixin
+     may narrow any anti-rigid type.
   6. Anti-rigidity needs an individual that can change: an endurant, or a
      process, whose constitution varies in time.
 

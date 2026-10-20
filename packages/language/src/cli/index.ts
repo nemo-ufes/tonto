@@ -516,7 +516,7 @@ const USAGE = `tonto -- static analysis for the tonto modeling language
   tonto patterns [name]      the modeling patterns, each a model that validates
     --json                   the catalog as JSON
   tonto tables               the reference tables the checks consult, as JSON
-  tonto guide                the language in one page, generated from them
+  tonto guide                the language in one page; catalogs from the tables
   tonto rules [code] [--json]  every rule, or one: why it exists, the smallest
                              model that trips it, its message and its repairs
 
