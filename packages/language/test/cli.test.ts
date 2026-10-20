@@ -9,18 +9,25 @@ import { inOntologyInPlace } from './in-ontology.js';
 import { canonicalPath } from '../src/utils/paths.js';
 
 /** Captures whatever the command writes, and its exit code. */
-async function tonto(...argv: string[]): Promise<{ code: number; out: string }> {
+async function tonto(...argv: string[]): Promise<{ code: number; out: string; err: string }> {
     const written: string[] = [];
-    const write = process.stdout.write.bind(process.stdout);
+    const complained: string[] = [];
+    const writeOut = process.stdout.write.bind(process.stdout);
+    const writeErr = process.stderr.write.bind(process.stderr);
     process.stdout.write = (chunk: string | Uint8Array): boolean => {
         written.push(String(chunk));
         return true;
     };
+    process.stderr.write = (chunk: string | Uint8Array): boolean => {
+        complained.push(String(chunk));
+        return true;
+    };
     try {
         const code = await run(argv);
-        return { code, out: written.join('') };
+        return { code, out: written.join(''), err: complained.join('') };
     } finally {
-        process.stdout.write = write;
+        process.stdout.write = writeOut;
+        process.stderr.write = writeErr;
     }
 }
 
@@ -324,7 +331,7 @@ describe('the command-line interface', () => {
         expect(result.code).toBe(0);
         expect(result.out).toContain('<http://nemo.inf.ufes.br/jpalmeida/conferences> a owl:Ontology');
         expect(result.out).toContain('@prefix conferences: <http://nemo.inf.ufes.br/jpalmeida/conferences#>');
-        expect(result.err ?? '').not.toContain('gufo-placeholder-namespace');
+        expect(result.err).not.toContain('gufo-placeholder-namespace');
     });
 
     test('gufo writes the direct specializations only when asked', async () => {
