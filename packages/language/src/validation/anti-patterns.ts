@@ -734,7 +734,7 @@ export function checkNonSortalSpansKinds(
     const [identity] = [...identities];
     accept(
         ANTI_PATTERN_SEVERITY,
-        `${classDeclaration.stereotype === 'category' ? 'Category' : 'Non-sortal'} "${classDeclaration.name}" classifies individuals of more than one kind, but everything under it draws identity from "${identity.name}". A "subkind", "role" or "phase" of "${identity.name}" says that, and supplies the identity a non-sortal cannot.`,
+        `${classDeclaration.stereotype === 'category' ? 'Category' : 'Non-sortal'} "${classDeclaration.name}" classifies individuals of more than one kind, but everything under it draws identity from "${identity.name}". A "subkind", "role", "phase" or "historicalRole" of "${identity.name}" says that, and supplies the identity a non-sortal cannot.`,
         { node: classDeclaration, property: 'name', code: 'MixIden' }
     );
 }

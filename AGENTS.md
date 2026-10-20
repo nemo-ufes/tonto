@@ -344,7 +344,8 @@ which is whether the edit was a step backwards.
   or semi-rigid mixin as the source.
 - **An ultimate sortal under another.** `kind`, `relator`, `event`, `type`,
   `abstractum` and the rest top their lineages; what specializes them is a
-  `subkind`, `role` or `phase`.
+  `subkind`, `role`, `phase` or `historicalRole` that shares a nature. An
+  event's instances cannot change, so only a `subkind` specializes one.
 - **Spelling out what a class already inherits.** `subsets parts` and
   `specializes hasPart` resolve inside a class that inherits them: the
   specialization says where to look, and the nearest declaration of the name
@@ -360,9 +361,10 @@ which is whether the edit was a step backwards.
   `deprecated-stereotype` offers the reading the model already supports.
 - **`@begin` or `@end` on something outside time.** The two property
   stereotypes mark when a concrete individual began and ceased to exist:
-  `@begin birthDate: const date`. Both are `const`, `@end` is `[0..1]`
-  on a class of endurants, and neither is ever required -- a class that says
-  nothing about its lifetime is well formed.
+  `@begin birthDate: const date`. Both are `const`. `@end` is `[0..1]`
+  on anything that may still be going on -- an endurant, a process, or a
+  situation -- and `[1]` on an event, which has ended. Neither is ever
+  required -- a class that says nothing about its lifetime is well formed.
 - **A quality of an event.** Aspects are reified for what has a life to bear
   them -- endurants, and processes. An event is over and a situation obtains
   or does not, so what would be a `quality` or an `intrinsicMode` of one is

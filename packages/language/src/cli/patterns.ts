@@ -249,7 +249,7 @@ event NoonDelimitedSegment
 
 ['participational-event-decomposition', 'Events and situations', 'An event portion determined by one participant',
  'An event divided into maximal portions that depend exclusively on individual participants.',
- 'Use `@participational` for a maximal portion projected by dependence on one endurant. The participant end of the portion’s `@participation` is exactly `[1]`: the whole meeting may have many participants, but each attendee participation depends exclusively on one of them. Portions determined by different participants are disjoint under this criterion.',
+ 'Use `@participational` for a maximal portion projected by dependence on one endurant. The participant end of the portion’s `@participation` is exactly `[1]`: the whole meeting may have many participants, but each attendee participation depends exclusively on one of them. Two participations that each require a participant already make two, and `participational-portion-two-participants` says so. Portions determined by different participants are disjoint under this criterion.',
  'Guizzardi et al. 2013 (UFO-B)',
  `kind Person
 event Meeting {

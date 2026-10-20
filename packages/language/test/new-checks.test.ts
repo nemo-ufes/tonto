@@ -2657,7 +2657,7 @@ describe('the rules for events, and their consequences', () => {
         // Ultimate sortals are pairwise disjoint, so a lineage holds one.
         for (const stereotype of ['situation', 'process', 'event']) {
             await expectError(`package p\n${stereotype} A\n${stereotype} B specializes A`,
-                /is an ultimate sortal -- it supplies its own principle of identity/);
+                /is an ultimate sortal -- it supplies its own principle of identity and so tops its lineage, and what specializes it is a base sortal: a "subkind", "role", "phase" or "historicalRole"/);
         }
     });
 
@@ -2702,13 +2702,15 @@ describe('the rules for events, and their consequences', () => {
             await expectNoErrors('package p\ncategory C of objects, situations');
         });
 
-        test('an anti-rigid mixin holds of endurants only', async () => {
-            // A role or a phase divides a life; an event, a situation and an
-            // abstract individual have none to divide.
+        test('an anti-rigid mixin classifies what can change', async () => {
+            // A role or a phase divides a life that can change. An event, a
+            // situation and an abstract individual have none to divide; a
+            // process does, though it does not endure.
             for (const stereotype of ['roleMixin', 'phaseMixin', 'historicalRoleMixin']) {
                 for (const nature of ['events', 'situations', 'abstract-individuals']) {
                     await expectError(`package p\n${stereotype} X of ${nature}`, /cannot classify/);
                 }
+                await expectNoErrors(`package p\n${stereotype} X of processes`);
             }
             await expectNoErrors('package p\nroleMixin R of objects');
         });
@@ -2937,8 +2939,8 @@ describe('an abstractum classifies abstract individuals', () => {
 
     test('only a subkind sits beneath one', async () => {
         await expectNoErrors('package p\nabstractum Color\nsubkind Hue specializes Color');
-        // The anti-rigid sortals are confined to endurants, and an abstract
-        // individual is not one -- nothing they classify could be a Color.
+        // An anti-rigid sortal classifies what can change, and an abstract
+        // individual cannot -- nothing they classify could be a Color.
         for (const stereotype of ['role', 'phase', 'historicalRole']) {
             await expectError(`package p\nabstractum Color\n${stereotype} X specializes Color`,
                 /nature|specialize/);

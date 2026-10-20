@@ -114,6 +114,17 @@ describe('the rules reference', () => {
         expect(RULES.every(rule => rule.rationale.length > 20 && rule.group.length > 0)).toBe(true);
     });
 
+    test('a rationale says what its check covers, not a narrower case', () => {
+        // The worked example can be a kind and still trip the rule, which is
+        // how this rationale kept saying "@end" was an endurant rule after
+        // the check had learned processes and situations.
+        const end = RULES.find(rule => rule.code === 'end-time-point-not-optional');
+        expect(end?.rationale).toContain('a process still going on');
+        expect(end?.rationale).toContain('a situation still obtaining');
+        expect(end?.rationale).not.toContain('class of endurants');
+        expect(RULES.find(rule => rule.code === 'MixIden')?.rationale).toContain('"historicalRole"');
+    });
+
     test('and an example shows the repair its rule has', async () => {
         // The example is the smallest model that trips the rule, and that was
         // sometimes smaller than the model a repair needs to exist: nine

@@ -96,8 +96,9 @@ must name its ground; two different relators may bind the same pair. The gUFO
 export maps this to `gufo:isDerivedFrom`.
 
 `@begin` and `@end` attributes state when a concrete individual began and
-ceased to exist. Both are `const`; `@end` is optional for an endurant or
-unfolding process. Neither attribute is required. Reified qualities and modes
+ceased to exist. Both are `const`. `@end` is `[0..1]` on anything that may
+still be going on -- an endurant, a process, or a situation -- and `[1]` on
+an event, which has ended. Neither attribute is required. Reified qualities and modes
 need a bearer with a life, such as an endurant or process. For an event or
 situation, write the corresponding fixed property as an attribute instead.
 
@@ -115,6 +116,8 @@ Write the meaning of an individual or relationship in domain language.
 “A person's contribution as an author” describes the model; “the record
 storing authorship” describes a database representation that may not exist.
 
-The generated guide, rules, patterns, and tests are the places to check
-whether a design decision still matches the implementation. The current AST
+The guide's catalogs, the rules, the patterns, and the tests are the places
+to check whether a design decision still matches the implementation. The
+principles in the guide are prose, so cross-check them against the checks.
+The current AST
 and grammar layout are described in [development.md](development.md#grammar-and-ast).

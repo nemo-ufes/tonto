@@ -230,9 +230,11 @@ Six principles decide every case:
   6. Anti-rigidity needs an individual that can change: an endurant, or a
      process, whose constitution varies in time.
 
-A \`phase\` comes in a set: at least two, in a \`disjoint complete genset\`, and
-that set holds phases and nothing else. A \`historicalRole\` holds because
-something happened, so the event is named: its own \`@participation\`,
+A \`phase\` comes in a partition: at least two, in a \`disjoint complete genset\`,
+and that set holds phases and nothing else. One phase alone is not that
+partition yet -- the one it alternates with may not have been written -- so
+\`lone-phase\` only hints. A \`historicalRole\` holds because something
+happened, so the event is named: its own \`@participation\`,
 \`@creation\` or \`@termination\` in it, or a \`derivedFrom\` naming one written
 where it happened (see Derived relations).
 
@@ -273,8 +275,11 @@ The three event-parthood stereotypes answer different decomposition criteria:
   \`@temporal\` merely because it occupies some of the whole's duration.
 - \`@participational\` is for a maximal portion projected by exclusive
   dependence on one endurant, such as John's participation in a meeting. Its
-  \`@participation\` relation has maximum \`1\` at the participant end; different
-  participants determine disjoint portions under that criterion.
+  \`@participation\` has maximum \`1\` at the participant end. One participant
+  means one participation that requires it: a portion that a \`Person\` and a
+  \`Message\` must each take part in has two, and
+  \`participational-portion-two-participants\` says so. Different participants
+  determine disjoint portions under that criterion.
 
 ## Derived relations
 

@@ -213,14 +213,15 @@ export const STEREOTYPES: Record<ClassStereotype, StereotypeFacts> = {
         natures: CHANGEABLE_INSTANCE_NATURES
     },
     // Perdurants and high-order types are ultimate sortals: they supply a
-    // principle of identity, and their
-    // specializations are `subkind`s exactly as a kind's are. Classifying them
-    // otherwise is what made a `subkind` of an `event` impossible -- it had
-    // nowhere to draw identity from.
-    // An event specializes only a `category` or a `mixin`, and is
-    // specialized only by a `subkind` -- so events form no
+    // principle of identity and top their lineages, as a kind does. What
+    // specializes one is a base sortal that shares a nature -- a `subkind`,
+    // and, where the instances can change, a `role`, `phase` or
+    // `historicalRole`. An event's instances cannot, so only a `subkind`
+    // specializes one; classifying an event as anything else is what made
+    // that `subkind` impossible, since it had nowhere to draw identity from.
+    // An event specializes only a `category` or a `mixin`, so events form no
     // taxonomy among themselves, exactly as kinds do not. `event E2 specializes
-    // E1` is therefore an error now; write `subkind E2 specializes E1`.
+    // E1` is therefore an error; write `subkind E2 specializes E1`.
     event: {
         sortality: 'ultimate-sortal', rigidity: 'rigid',
         natures: ['events']
@@ -408,7 +409,7 @@ export function whyNotSpecialize(subject: string, candidate: string): string | u
         return `${a(candidate)} is anti-rigid, so its instances may stop being one; ${a(subject)} is not, so its instances could not follow`;
     }
     if (isUltimateSortal(subject) && isSortal(candidate)) {
-        return `${a(subject)} is an ultimate sortal -- it supplies its own principle of identity and so tops its lineage, and what specializes it is a base sortal: a "subkind", "role" or "phase"`;
+        return `${a(subject)} is an ultimate sortal -- it supplies its own principle of identity and so tops its lineage, and what specializes it is a base sortal: a "subkind", "role", "phase" or "historicalRole"`;
     }
     const shared = allowedNaturesFor(subject) && allowedNaturesFor(candidate)
         && [...expandNatures(allowedNaturesFor(subject)!)]

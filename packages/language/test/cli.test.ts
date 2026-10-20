@@ -198,6 +198,16 @@ describe('the command-line interface', () => {
         expect(out).not.toContain('only a relationally founded one');
     });
 
+    test('a lone phase is a hint, and a participational portion has one required participant', async () => {
+        // Both sentences had read as stricter than the checks: one phase is
+        // not yet a missing partition, and two required participations are
+        // already two participants.
+        const { out } = await tonto('guide');
+        const prose = out.replace(/\s+/g, ' ');
+        expect(prose).toContain('`lone-phase` only hints');
+        expect(prose).toContain('participational-portion-two-participants');
+    });
+
     test('an anti-rigid type classifies what can change, not only endurants', async () => {
         // Prose again, and it had drifted from the natures: a process does not
         // endure, and an anti-rigid type may classify one all the same.

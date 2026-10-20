@@ -24,8 +24,10 @@ what its instances are and why they belong to the class:
 
 These are questions about the domain, not a conversion table for OWL classes.
 In particular, an OWL subclass axiom alone does not tell you whether its
-specialization should be a `subkind`, `role`, or `phase`. The generated guide
-explains each stereotype and the combinations tonto admits.
+specialization should be a `subkind`, `role`, `phase`, or `historicalRole`.
+The language guide explains each stereotype and the combinations tonto
+admits. Its catalogs are printed from the validator's tables; the principles
+beside them are prose.
 
 If you usually begin in Protégé by adding classes and object properties,
 begin here by naming the individuals and relationships in the domain. Then

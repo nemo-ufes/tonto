@@ -12,7 +12,7 @@ and [installation guide](installation.md). The language decisions are in
 | `packages/language/src/grammar/` | Langium grammar, divided by language concern |
 | `packages/language/src/validation/` | Static and ontological checks |
 | `packages/language/src/lsp/` | Completion, hover, actions, navigation, tokens, and formatting |
-| `packages/language/src/cli/` | `tonto` commands, generated guide, rules, and patterns |
+| `packages/language/src/cli/` | `tonto` commands: guide, rules, and patterns |
 | `packages/language/src/tools.ts` | Shared agent tool definitions and answers |
 | `packages/language/src/gufo.ts` and `exports.ts` | gUFO mapping and shared export writing |
 | `packages/extension/` | VS Code client, language-server bundle, commands, and agent integration |
