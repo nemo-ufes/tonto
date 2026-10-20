@@ -27,6 +27,35 @@ export interface WrittenFile {
     path: string;
 }
 
+export interface WorkspaceFileChange {
+    path: string;
+    content: string;
+    /** Refuse to replace an existing file. */
+    createOnly?: boolean;
+    /** Refuse to create a file when the target is missing. */
+    mustExist?: boolean;
+}
+
+/** Writes model files inside a workspace, replacing all targets or none. */
+export function writeWorkspaceFiles(workspaceRoot: string, changes: readonly WorkspaceFileChange[]): string[] {
+    const root = realpathSync(resolve(workspaceRoot));
+    const targets = changes.map(change => {
+        const candidate = resolve(root, change.path);
+        const directory = realpathSync(dirname(candidate));
+        const fromRoot = relative(root, directory);
+        if (fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) {
+            throw new Error(`The model file "${change.path}" is outside the workspace.`);
+        }
+        const target = join(directory, basename(candidate));
+        const existing = existingTarget(target);
+        if (change.createOnly && existing) throw new Error(`The model file "${change.path}" already exists.`);
+        if (change.mustExist && !existing) throw new Error(`The model file "${change.path}" no longer exists.`);
+        if (existing && !existing.isFile()) throw new Error(`The model file "${change.path}" is not a regular file.`);
+        return { target, content: change.content, createOnly: change.createOnly, mustExist: change.mustExist };
+    });
+    return writeStagedPaths(targets);
+}
+
 /**
  * Writes each file beside the ontology file it came from. With a workspace,
  * an ontology file outside it is refused, as `writeInto` refuses a directory
@@ -89,29 +118,49 @@ function checkName(file: ExportedFile): void {
  * the error is the one that failed, not one from putting things back.
  */
 function writeStaged(targets: ReadonlyArray<{ file: ExportedFile; directory: string }>): WrittenFile[] {
-    const staged = targets.map(({ file, directory }) => ({
-        file,
-        target: join(directory, file.file),
-        temporary: join(directory, `.${file.file}.${randomUUID()}.tmp`),
-        backup: join(directory, `.${file.file}.${randomUUID()}.bak`)
+    const paths = writeStagedPaths(targets.map(({ file, directory }) => ({
+        target: join(directory, file.file), content: file.content
+    })));
+    return targets.map(({ file }, index) => ({ ontology: file.ontology, path: paths[index] }));
+}
+
+/** Stages sibling targets and rolls installed files back if any rename fails. */
+function writeStagedPaths(targets: ReadonlyArray<{ target: string; content: string; createOnly?: boolean; mustExist?: boolean }>): string[] {
+    const staged = targets.map(item => ({
+        ...item,
+        temporary: join(dirname(item.target), `.${basename(item.target)}.${randomUUID()}.tmp`),
+        backup: join(dirname(item.target), `.${basename(item.target)}.${randomUUID()}.bak`)
     }));
     if (new Set(staged.map(item => item.target)).size !== staged.length) {
-        throw new Error('An export names the same output file more than once.');
+        throw new Error('The operation names the same output file more than once.');
     }
     for (const { target } of staged) {
         const existing = existingTarget(target);
         if (existing && !existing.isFile() && !existing.isSymbolicLink()) {
-            throw new Error(`The export target "${target}" is not a file.`);
+            throw new Error(`The output target "${target}" is not a file.`);
         }
     }
     const backedUp = new Set<(typeof staged)[number]>();
     const installed: typeof staged = [];
     try {
-        for (const { file, temporary } of staged) writeFileSync(temporary, file.content, { encoding: 'utf8', flag: 'wx' });
+        for (const { content, temporary } of staged) writeFileSync(temporary, content, { encoding: 'utf8', flag: 'wx' });
         for (const item of staged) {
+            const existing = existingTarget(item.target);
+            if (item.createOnly && existing) {
+                throw new Error(`The output target "${item.target}" already exists.`);
+            }
+            if (item.mustExist && !existing) {
+                throw new Error(`The output target "${item.target}" no longer exists.`);
+            }
             if (backUp(item.target, item.backup)) backedUp.add(item);
         }
         for (const item of staged) {
+            if (item.createOnly) {
+                linkSync(item.temporary, item.target);
+                installed.push(item);
+                unlinkSync(item.temporary);
+                continue;
+            }
             renameSync(item.temporary, item.target);
             installed.push(item);
         }
@@ -139,7 +188,7 @@ function writeStaged(targets: ReadonlyArray<{ file: ExportedFile; directory: str
     for (const { backup } of backedUp) {
         try { unlinkSync(backup); } catch { /* Harmless; the export is in place. */ }
     }
-    return staged.map(({ file, target }) => ({ ontology: file.ontology, path: target }));
+    return staged.map(({ target }) => target);
 }
 
 /** Keeps an existing target at `backup`, leaving it in place; false when there is none. */

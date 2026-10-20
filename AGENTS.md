@@ -24,8 +24,7 @@ ontology.
 One page. The stereotype lists, the nature names, and what each of the 23
 association stereotypes relates are printed from the tables the validator
 reads, so those cannot be out of date. The six principles, and what an
-anti-rigid type classifies, are prose beside that. They can drift; the
-guide tests lock the sentences that already did.
+anti-rigid type classifies, are guiding prose beside that.
 
 Read it before writing. Most diagnostics are a stereotype whose natures do not
 match what it is being used for, and the guide is the shortest statement of
@@ -34,7 +33,7 @@ which combinations exist.
 ### Then close the loop
 
     npx tonto check model.tonto --json
-    cat model.tonto | npx tonto check - --json
+    cat draft.tonto | npx tonto check - --json --workspace=<workspace-root>
 
 A file is checked with the rest of its workspace -- the nearest directory
 above it holding a `tonto.json`, or else the highest directory above it that
@@ -172,9 +171,10 @@ reference could name more than one relation, qualify it with its source class
 (and package when needed).
 
 Start a new model as a one-file ontology. Split it with the editor's *Split
-into an ontology file and package* refactoring rather than by hand, and do not
-create a `tonto.json` unless a location needs redirecting. Use *ontology
-file* and *one-file ontology* consistently.
+into an ontology file and package* refactoring, `tonto split <ontology-file>`,
+or MCP's `tonto_split`; do not split it by hand. Do not create a `tonto.json`
+unless a location needs redirecting. Use *ontology file* and *one-file
+ontology* consistently.
 
 ### Ask instead of experimenting
 
@@ -213,7 +213,7 @@ rather than about text. A declaration's `///` documentation comes with it as
 
 `packages/mcp` exposes the same things as tools. They are defined once, in
 `packages/language/src/tools.ts`, and VS Code's language-model tools are the
-same eighteen. Start it with a workspace
+same nineteen. Start it with a workspace
 directory if the model has `import`s:
 
     npx tonto-mcp /path/to/models
@@ -244,6 +244,7 @@ protocol at all.
 | `tonto_ast` | the parsed model as JSON, `///` documentation included |
 | `tonto_gufo` | preview the checked model as gUFO Turtle, or regenerate each ontology's `.ttl` beside its ontology file with `write` (or into `outDir`) |
 | `tonto_ontologies` | the ontologies the workspace authors: name, ontology file, namespace, errors |
+| `tonto_split` | split a saved one-file ontology into its ontology file and package file |
 | `tonto_fetch` | retrieve the ontologies the model imports by location, into the workspace cache |
 | `tonto_tables` | the tables the checks read |
 
@@ -646,8 +647,9 @@ TypeScript, JSON, Turtle, or free-form text.
 - `tonto.json` is the workspace's optional settings file and maps import
   locations. Ontology headers and package declarations identify the members
   of each ontology.
-- Start a new model as a one-file ontology, and split it with the editor's
-  "Split into an ontology file and package" refactoring rather than by hand.
+- Start a new model as a one-file ontology, then split it with the editor's
+  "Split into an ontology file and package" refactoring, `tonto split`, or
+  the MCP tool `tonto_split`.
 
 ## Use the tonto support that is actually available
 

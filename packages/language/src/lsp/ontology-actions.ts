@@ -325,6 +325,31 @@ export function splitOneFileOntology(document: LangiumDocument, range: Range): C
     return split && { title: `Split "${ontology.name}" into an ontology file and package "${split.core}" (${split.core}.tonto)`, kind: CodeActionKind.RefactorRewrite, edit: split.edit };
 }
 
+/** The same split, as the two complete files written by CLI and MCP. */
+export interface SplitOntologyFiles {
+    ontology: string;
+    packageName: string;
+    ontologyFile: string;
+    ontologyText: string;
+    packageFile: string;
+    packageText: string;
+}
+
+export function splitOneFileOntologyFiles(document: LangiumDocument): SplitOntologyFiles | undefined {
+    const ontology = (document.parseResult.value as Model).ontologies[0];
+    if (!ontology?.name || document.uri.scheme !== 'file') return undefined;
+    const split = splitEdit(document);
+    if (!split) return undefined;
+    return {
+        ontology: ontology.name,
+        packageName: split.core,
+        ontologyFile: document.uri.fsPath,
+        ontologyText: split.ontologyText,
+        packageFile: URI.parse(split.uri).fsPath,
+        packageText: split.packageText
+    };
+}
+
 /**
  * The edit that splits a one-file ontology: its declarations move to a new
  * package file, `core` (or the first free `coreN`), and the header stays
@@ -333,7 +358,7 @@ export function splitOneFileOntology(document: LangiumDocument, range: Range): C
  */
 function splitEdit(
     document: LangiumDocument, more: readonly string[] = [], reserved: readonly string[] = []
-): { edit: WorkspaceEdit; core: string; uri: string } | undefined {
+): { edit: WorkspaceEdit; core: string; uri: string; ontologyText: string; packageText: string } | undefined {
     const model = document.parseResult.value as Model;
     const ontology = model.ontologies[0];
     const body = model.packages.find(isOntologyBody);
@@ -350,6 +375,7 @@ function splitEdit(
     const rest = text.slice(ontology.$cstNode.end).replace(/^[ \t]*\r?\n/, '').replace(/^(\s*\r?\n)+/, '').trimEnd();
     const content = [`package ${name} in ${ontology.name}`, rest].join(eol + eol) + eol;
     const bundles = [`${name} from <${name}.tonto>`, ...more].map(line => `${eol}    ${line}`).join('');
+    const ontologyText = text.slice(0, document.textDocument.offsetAt(header.end)) + ` bundles${bundles}${eol}`;
     const edit: WorkspaceEdit = {
         documentChanges: [
             { kind: 'create', uri: target, options: { overwrite: false, ignoreIfExists: false } },
@@ -360,7 +386,7 @@ function splitEdit(
             }] }
         ]
     };
-    return { edit, core: name, uri: target };
+    return { edit, core: name, uri: target, ontologyText, packageText: content };
 }
 
 /** An ontology the workspace authors, as the commands that add to one list it. */

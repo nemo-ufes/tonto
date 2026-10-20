@@ -535,6 +535,35 @@ export const TOOLS: readonly ToolDefinition[] = [
         }
     },
     {
+        name: 'tonto_split',
+        title: 'Split a one-file ontology',
+        progress: 'Splitting the ontology into its header and package…',
+        description: () => 'Use to apply the editor\'s "Split into an ontology file and package" refactoring without an editor. '
+            + 'Writes the ontology header and one package file beside the saved ontology file, preserving its public name. '
+            + 'Only works on a saved one-file ontology; it refuses existing package-file targets and files outside the workspace.',
+        input: {
+            type: 'object',
+            properties: {
+                path: { type: 'string', description: 'One ontology file, relative to the workspace.' }
+            },
+            required: ['path']
+        },
+        run: async (input, host) => {
+            const paths = host.files([required(input, 'path')]);
+            if (paths.length !== 1) throw new ToolError('tonto_split needs exactly one ontology file path.');
+            host.workspaceRoot(paths);
+            try {
+                const result = await host.session(paths).splitOntologyFile(paths[0]);
+                return {
+                    text: `Split ontology "${result.ontology}":\n  ontology file: ${host.display(result.ontologyFile)}\n  package file: ${host.display(result.packageFile)}`,
+                    data: { ...result }
+                };
+            } catch (error) {
+                throw new ToolError(`Could not split the ontology: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+    },
+    {
         name: 'tonto_gufo',
         title: 'Export to gUFO',
         progress: 'Mapping tonto to gUFO…',

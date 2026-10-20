@@ -453,6 +453,30 @@ export async function ontologies(paths: string[], json: boolean): Promise<number
     return listed.some(ontology => ontology.errors > 0) ? 1 : 0;
 }
 
+/** Split a saved one-file ontology using the same file layout as the editor refactoring. */
+async function splitOntology(paths: string[], workspace?: string, json = false): Promise<number> {
+    if (paths.length !== 1) {
+        process.stderr.write('tonto split needs exactly one ontology file path\n');
+        return 2;
+    }
+    try {
+        const file = resolve(paths[0]);
+        const root = workspace ? resolve(workspace) : workspaceRootOf(file);
+        const result = await new TontoSession({ workspace: [root] }).splitOntologyFile(file);
+        const output = {
+            ...result,
+            ontologyFile: relative(process.cwd(), result.ontologyFile) || result.ontologyFile,
+            packageFile: relative(process.cwd(), result.packageFile) || result.packageFile
+        };
+        process.stdout.write(json ? JSON.stringify(output, undefined, 2) + '\n'
+            : `Split ontology "${result.ontology}" into:\n  ontology file: ${output.ontologyFile}\n  package file: ${output.packageFile}\n`);
+        return 0;
+    } catch (error) {
+        process.stderr.write(`tonto split: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+    }
+}
+
 export async function printGuide(): Promise<number> {
     const { guide } = await import('./guide.js');
     process.stdout.write(guide());
@@ -491,6 +515,10 @@ const USAGE = `tonto -- static analysis for the tonto modeling language
   tonto ontologies [path]    the ontologies the workspace authors: name,
                              ontology file, namespace and error count
     --json                   the same as JSON
+  tonto split <ontology-file> split a one-file ontology into its header and
+                             package file, using the editor's refactoring
+    --workspace=<dir>        load this directory as the workspace
+    --json                   return the ontology and package file paths
   tonto format [path]        lay a model out canonically (stdin if no path)
   tonto ast [path]           the parsed model as JSON
   tonto gufo [paths...]      export the ontologies of these files as
@@ -642,6 +670,21 @@ async function dispatch(argv: string[]): Promise<number> {
     }
     if (command === 'ontologies') {
         return ontologies(rest.filter(argument => !argument.startsWith('--')), rest.includes('--json'));
+    }
+    if (command === 'split') {
+        const flags = rest.filter(argument => argument.startsWith('--'));
+        const workspaceFlag = flags.find(flag => flag.startsWith('--workspace='));
+        const unknown = flags.filter(flag => flag !== '--json' && flag !== workspaceFlag);
+        if (unknown.length > 0) {
+            process.stderr.write(`unknown option ${unknown.join(', ')}\n`);
+            return 2;
+        }
+        if (workspaceFlag === '--workspace=') {
+            process.stderr.write('--workspace needs a directory\n');
+            return 2;
+        }
+        return splitOntology(rest.filter(argument => !argument.startsWith('--')),
+            workspaceFlag?.slice('--workspace='.length), flags.includes('--json'));
     }
     if (command === 'explain') {
         return explain(rest);

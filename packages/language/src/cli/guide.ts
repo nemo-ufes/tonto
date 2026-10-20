@@ -87,6 +87,17 @@ after it; \`@label\` is one line. \`label { }\` and \`description { }\` are the
 older spelling of the same two things, and \`tonto check --fix=legacy-text-block\`
 converts them.
 
+Write comments and documentation in the language of the modeled domain. Say
+what an individual is, what a relationship means, or what happened; do not
+describe a declaration as storing, tracking, capturing, or recording facts.
+A model element is not a database record. For example, write \`A person's
+contribution as an author of a published paper\`, not \`The relationship
+recording a person's authorship of a published paper\`; write \`An invited
+speaker delivered the keynote speech\`, not \`Records the invited speaker who
+delivers a keynote speech\`. Such verbs are appropriate only when they name an
+action or concept in the domain itself -- for example, a civil register really
+does record a birth.
+
 ## Ontologies, packages and files
 
 Three words, each for one thing:
@@ -111,10 +122,11 @@ Ontology and package names are lower case, a package's a segment at a time:
 A small ontology is a **one-file ontology**: the header, then its
 declarations, as above. It has no packages.
 
-When it outgrows the file, the editor's *Split into an ontology file and
-package* refactoring, on the header, moves the declarations into a
-**package file** and leaves the header behind, now listing the ontology's
-packages after \`bundles\`, each with the location of its package file:
+When it outgrows the file, split it with the editor's *Split into an ontology
+file and package* refactoring, \`tonto split <ontology-file>\`, or MCP's
+\`tonto_split\`. Each moves the declarations into a **package file** and
+leaves the header behind, now listing the ontology's packages after
+\`bundles\`, each with the location of its package file:
 
     /// @namespace https://example.org/shop#
     ontology shop bundles

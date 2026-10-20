@@ -1,7 +1,7 @@
 import {
     existsSync, lstatSync, readFileSync, readdirSync, statSync, writeFileSync
 } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { CodeAction, Diagnostic, TextEdit } from 'vscode-languageserver';
 import { CodeActionKind } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -27,6 +27,8 @@ import { declaredNamespace } from './utils/namespaces.js';
 import type { FetchResult } from './publication/workspace.js';
 import { resetDerivedCaches } from './utils/derived-cache.js';
 import { canonicalPath } from './utils/paths.js';
+import { writeWorkspaceFiles } from './exports.js';
+import { splitOneFileOntologyFiles } from './lsp/ontology-actions.js';
 
 /** LSP completion kinds, named rather than numbered, since a reader is reading. */
 const KINDS: Record<number, string> = {
@@ -82,6 +84,13 @@ export interface SessionOptions {
     antiPatterns?: boolean;
     locations?: Record<string, string>;
     publication?: boolean;
+}
+
+export interface SplitOntologyResult {
+    ontology: string;
+    packageName: string;
+    ontologyFile: string;
+    packageFile: string;
 }
 
 /** Every `.tonto` file under the given paths; files are taken as given. */
@@ -575,6 +584,37 @@ export class TontoSession {
     /** Validates files on disk, which is what the command line does. */
     async validateFiles(paths: string[]): Promise<Reported[]> {
         return this.oneAtATime(() => this.readFiles(paths));
+    }
+
+    /** Split a saved one-file ontology into its ontology file and package file. */
+    async splitOntologyFile(path: string): Promise<SplitOntologyResult> {
+        return this.oneAtATime(async () => {
+            await this.open();
+            const file = canonicalPath(path);
+            const root = this.folders().find(folder => {
+                const fromRoot = relative(folder, file);
+                return fromRoot === '' || (fromRoot !== '..' && !fromRoot.startsWith(`..${sep}`) && !isAbsolute(fromRoot));
+            });
+            if (!root) throw new Error(`The ontology file "${path}" is outside the configured workspace.`);
+            await this.syncWorkspace(new Set([file]));
+            const document = this.documents(new Set([file]))[0];
+            if (!document) throw new Error(`Could not read ontology file "${path}".`);
+            const split = splitOneFileOntologyFiles(document);
+            if (!split) throw new Error(`"${path}" is not a saved one-file ontology that can be split.`);
+            writeWorkspaceFiles(root, [
+                { path: relative(root, split.packageFile), content: split.packageText, createOnly: true },
+                { path: relative(root, split.ontologyFile), content: split.ontologyText, mustExist: true }
+            ]);
+            await this.services.shared.workspace.DocumentBuilder.update([
+                URI.file(split.ontologyFile), URI.file(split.packageFile)
+            ], []);
+            return {
+                ontology: split.ontology,
+                packageName: split.packageName,
+                ontologyFile: split.ontologyFile,
+                packageFile: split.packageFile
+            };
+        });
     }
 
     /**

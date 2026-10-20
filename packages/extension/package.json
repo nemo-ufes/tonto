@@ -536,6 +536,26 @@
                 }
             },
             {
+                "name": "tonto_split",
+                "displayName": "Split a one-file ontology",
+                "toolReferenceName": "tontoSplit",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Split a one-file ontology",
+                "modelDescription": "Use to apply the editor's \"Split into an ontology file and package\" refactoring without an editor. Writes the ontology header and one package file beside the saved ontology file, preserving its public name. Only works on a saved one-file ontology; it refuses existing package-file targets and files outside the workspace.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "One ontology file, relative to the workspace."
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ]
+                }
+            },
+            {
                 "name": "tonto_gufo",
                 "displayName": "Export to gUFO",
                 "toolReferenceName": "tontoGufo",
