@@ -108,6 +108,13 @@ export function renderDiagnostics(diagnostics: readonly Reported[], host?: Pick<
     }).join('\n');
 }
 
+function heldCollisionWarning(collisions: readonly { name: string; file: string }[], host: Pick<ToolHost, 'display'>): string {
+    if (collisions.length === 0) return '';
+    return 'Warning: held drafts match saved workspace files:\n'
+        + collisions.map(one => `  "${one.name}" matches "${host.display(one.file)}"`).join('\n')
+        + '\nRelease each held draft after saving it, so validation reads the saved workspace without temporary copies.';
+}
+
 /**
  * Model text inside a fence the text cannot close: one backtick longer than
  * any run in it. Three would end at the first triple backtick in a model,
@@ -218,7 +225,12 @@ export const TOOLS: readonly ToolDefinition[] = [
             const { source, files } = sourceOrFiles(input, host);
             const session = sessionFor(input, host, files);
             const diagnostics = source !== undefined ? await session.validateText(source) : await session.validateFiles(files!);
-            return { text: renderDiagnostics(diagnostics, host), data: { diagnostics } };
+            const collisions = await session.heldSavedCollisions();
+            const heldWarnings = heldCollisionWarning(collisions, host);
+            return {
+                text: [renderDiagnostics(diagnostics, host), heldWarnings].filter(Boolean).join('\n\n'),
+                data: { diagnostics, heldSavedCollisions: collisions }
+            };
         }
     },
     {
@@ -349,11 +361,13 @@ export const TOOLS: readonly ToolDefinition[] = [
         name: 'tonto_hold',
         title: 'Hold a file beside the draft',
         progress: 'Holding a tonto file…',
-        description: () => 'Use while drafting a model of several files that are not on disk yet: a held file is one that '
-            + 'later calls resolve against, named as a path without ".tonto" relative to the other held files (an ontology '
-            + 'file held as "shop" that bundles "sales from <sales/orders.tonto>" finds a package file held as '
-            + '"sales/orders"). Returns the held file\'s own diagnostics. Omit source to release a file; omit name to list '
-            + 'what is held.',
+        description: () => 'Use while drafting a multi-file model before its files are saved. A held draft is source kept '
+            + 'in Tonto\'s temporary MCP workspace, not a file on disk; later calls resolve references against it, so '
+            + 'drafts can refer to classes in other unsaved files. Name each file by its path without ".tonto" (for example, '
+            + 'an ontology file held as "shop" that bundles "sales from <sales/orders.tonto>" finds a package held as '
+            + '"sales/orders"). Returns the held file\'s own diagnostics. After saving the files, release each held draft '
+            + 'by calling this tool with its name and no source, so validation sees the saved workspace without temporary '
+            + 'copies. Omit source to release a file; omit name to list what is held.',
         input: {
             type: 'object',
             properties: {
@@ -367,14 +381,25 @@ export const TOOLS: readonly ToolDefinition[] = [
             const source = string(input, 'source');
             if (name === undefined) {
                 const held = session.holding();
-                return { text: held.length === 0 ? 'Nothing held.' : held.map(one => `${one.name} (${one.lines} lines)`).join('\n'), data: { held } };
+                const collisions = await session.heldSavedCollisions();
+                const warning = heldCollisionWarning(collisions, host);
+                return {
+                    text: [held.length === 0 ? 'Nothing held.' : held.map(one => `${one.name} (${one.lines} lines)`).join('\n'), warning]
+                        .filter(Boolean).join('\n\n'),
+                    data: { held, heldSavedCollisions: collisions }
+                };
             }
             if (source === undefined) {
                 const was = await session.release(name);
                 return { text: was ? `Released "${name}".` : `Nothing was held under "${name}".`, data: { released: was, held: session.holding() } };
             }
             const reported = await session.hold(name, source);
-            return { text: `Holding "${name}". Later calls resolve against it.\n\n${renderDiagnostics(reported)}`, data: { held: session.holding(), diagnostics: reported } };
+            const collisions = await session.heldSavedCollisions();
+            const warning = heldCollisionWarning(collisions.filter(one => one.name === name), host);
+            return {
+                text: [`Holding "${name}". Later calls resolve against it.`, warning, renderDiagnostics(reported)].filter(Boolean).join('\n\n'),
+                data: { held: session.holding(), diagnostics: reported, heldSavedCollisions: collisions }
+            };
         }
     },
     {

@@ -1433,7 +1433,7 @@ export function checkWeakSupplementation(
     }
     accept(
         'hint',
-        `Every "${classDeclaration.name}" has exactly one part, and supplementation requires a whole to have more than one. Either the decomposition is incomplete, or a part end should be widened to "[2..*]".`,
+        `Every "${classDeclaration.name}" has exactly one part, and supplementation requires a whole to have more than one. Consider whether other relevant parts in the domain are omitted from the model; if they are outside its scope, this is intentional. Otherwise, complete the decomposition or, where appropriate, widen a part end to "[2..*]".`,
         { node: classDeclaration, property: 'name', code: 'whole-with-one-part' }
     );
 }

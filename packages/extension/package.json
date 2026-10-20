@@ -394,7 +394,7 @@
                 "toolReferenceName": "tontoHold",
                 "canBeReferencedInPrompt": true,
                 "userDescription": "Hold a file beside the draft",
-                "modelDescription": "Use while drafting a model of several files that are not on disk yet: a held file is one that later calls resolve against, named as a path without \".tonto\" relative to the other held files (an ontology file held as \"shop\" that bundles \"sales from <sales/orders.tonto>\" finds a package file held as \"sales/orders\"). Returns the held file's own diagnostics. Omit source to release a file; omit name to list what is held.",
+                "modelDescription": "Use while drafting a multi-file model before its files are saved. A held draft is source kept in Tonto's temporary MCP workspace, not a file on disk; later calls resolve references against it, so drafts can refer to classes in other unsaved files. Name each file by its path without \".tonto\" (for example, an ontology file held as \"shop\" that bundles \"sales from <sales/orders.tonto>\" finds a package held as \"sales/orders\"). Returns the held file's own diagnostics. After saving the files, release each held draft by calling this tool with its name and no source, so validation sees the saved workspace without temporary copies. Omit source to release a file; omit name to list what is held.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {

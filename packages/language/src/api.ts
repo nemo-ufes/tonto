@@ -432,6 +432,18 @@ export class TontoSession {
         return [...this.held].map(([name, source]) => ({ name, lines: source.split('\n').length }));
     }
 
+    /** Held drafts whose ontology or package identity is already saved. */
+    async heldSavedCollisions(): Promise<Array<{ name: string; file: string }>> {
+        return this.oneAtATime(async () => {
+            await this.open();
+            await this.syncWorkspace(new Set());
+            return [...this.held].flatMap(([name, source]) => {
+                const saved = this.standsFor(source);
+                return saved ? [{ name, file: saved.fsPath }] : [];
+            });
+        });
+    }
+
     /**
      * A file name for a held document that no two names share.
      *

@@ -377,6 +377,34 @@ then \`const\` or \`addOnly\`, then \`derived\`, written in front of the type.
 \`const\` and \`addOnly\` are alternatives: the first says nothing changes and
 the second says nothing is taken away, so both is the second said twice. Two stereotypes may precede the name:
 
+### Datatypes and values
+
+An attribute's type is a datatype or an enumeration. The built-in datatypes
+are \`string\`, \`number\`, \`boolean\`, \`date\`, \`time\` and \`datetime\`;
+they are available in every file without a \`use\` or \`import\`. Use them for
+text, numbers, truth values, calendar dates, times of day and date-times.
+\`number\` allows decimal values.
+
+Declare a \`datatype\` for a value with components, and an \`enum\` for a
+closed set of named values:
+
+    datatype Address {
+        street: const string
+        city: const string
+    }
+    enum Color { red, green, blue }
+    kind House {
+        address: Address
+        exteriorColor: Color
+    }
+
+A datatype describes values, not concrete individuals. Its attributes are
+components of the value, so write each one with \`const\` before its type, as
+in \`street: const string\` above. An address with a different street is a
+different value. Use an attribute when a value describes a property of an
+individual; a relation to a datatype or enumeration is also possible, but
+usually says the same property less directly.
+
   @begin   the instant the individual began to exist
   @end     the instant it ceased to
 
