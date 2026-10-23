@@ -13,7 +13,7 @@ The name is a backronym for *t*extual *onto*logies. It also means “silly” or
 
 ## Start modeling in VS Code
 
-Install [tonto from the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-vscode) in VS Code 1.95 or later, then run **Tonto: Get Started**. The walkthrough can create your first ontology, open the language guide, show validation, and introduce the optional OWL gUFO-based export. The [installation guide](docs/installation.md) gives step-by-step instructions, including installation from a VSIX. The extension includes everything needed to edit models and use that export; it does not require a separate Node.js installation.
+Install [tonto from the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-vscode) in VS Code 1.95 or later, then run **Tonto: Get Started**. We also recommend [Tonto Visualizer](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-visualizer) for visualizing tonto models. The walkthrough can create your first ontology, open the language guide, show validation, and introduce the optional OWL gUFO-based export. The [installation guide](docs/installation.md) gives step-by-step instructions, including installation from a VSIX. The tonto extension includes everything needed to edit models and use that export; it does not require a separate Node.js installation.
 
 A VS Code workspace can start as an ordinary folder with one `.tonto` file and can later hold several ontologies. Run **Tonto: New Ontology...** to create one, or write this as `people.tonto`:
 

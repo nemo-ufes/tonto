@@ -36,6 +36,10 @@ the extension published by **nemo-ufes**. You can also open the [tonto
 Marketplace listing](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-vscode)
 and select **Install**. Reload VS Code if requested.
 
+We also recommend installing [Tonto Visualizer from the Visual Studio
+Marketplace](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-visualizer)
+to visualize tonto models.
+
 #### From a VSIX file
 
 If you have a `tonto-VERSION.vsix` file, in VS Code:
@@ -331,6 +335,10 @@ No VS Code, abra a visão **Extensões**, pesquise por **tonto** e instale a
 extensão publicada por **nemo-ufes**. Você também pode abrir a [página do tonto
 no Marketplace](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-vscode)
 e selecionar **Install**. Recarregue o VS Code, caso isso seja solicitado.
+
+Também recomendamos instalar o [Tonto Visualizer no Visual Studio
+Marketplace](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-visualizer)
+para visualizar modelos tonto.
 
 #### Por um arquivo VSIX
 
