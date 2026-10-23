@@ -92,7 +92,7 @@ describe('the tools agents call, defined once for every host', () => {
         const added = await runTool('tonto_new', { ontology: 'shop', package: 'sales', folder: 'sales' }, host);
         expect(added.isError).toBeUndefined();
         expect(added.text).toBe('"shop" was a one-file ontology: its declarations are now package "core", in core.tonto.\n'
-            + 'Wrote sales/sales.tonto, package "sales" of "shop", bundled in shop.tonto.');
+            + `Wrote ${host.display(join(workspace, 'sales', 'sales.tonto'))}, package "sales" of "shop", bundled in shop.tonto.`);
         expect((await runTool('tonto_validate', { paths: ['.'] }, host)).text).toBe('No diagnostics. The model is valid.');
         expect(await runTool('tonto_new', { ontology: 'other', folder: '../outside' }, host)).toMatchObject({ isError: true, text: expect.stringMatching(/outside the workspace/) });
         expect(await runTool('tonto_new', { ontology: 'other', folder: '/tmp' }, host)).toMatchObject({ isError: true, text: expect.stringMatching(/relative to the workspace/) });
