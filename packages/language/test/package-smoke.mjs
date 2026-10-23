@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,6 +48,14 @@ try {
 
     writeFileSync(join(temporaryDirectory, 'sample.tonto'), 'ontology sample\nkind Person\n');
     run(process.execPath, [cli, 'check', 'sample.tonto'], temporaryDirectory);
+
+    // The CLI's agent instructions are a file of the package, read when init runs.
+    const project = join(temporaryDirectory, 'project');
+    run(process.execPath, [cli, 'init', project], temporaryDirectory);
+    if (!readFileSync(join(project, 'AGENTS.md'), 'utf8').startsWith('<!-- tonto-model-instructions (cli) -->')) {
+        throw new Error('Installed CLI init did not write its agent instructions');
+    }
+    run(process.execPath, [cli, 'check', project], temporaryDirectory);
 } finally {
     rmSync(temporaryDirectory, { recursive: true, force: true });
 }

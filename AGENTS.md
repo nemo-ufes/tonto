@@ -170,11 +170,21 @@ an attribute, or a named end owned by that class. When a bare relation
 reference could name more than one relation, qualify it with its source class
 (and package when needed).
 
-Start a new model as a one-file ontology. Split it with the editor's *Split
-into an ontology file and package* refactoring, `tonto split <ontology-file>`,
-or MCP's `tonto_split`; do not split it by hand. Do not create a `tonto.json`
-unless a location needs redirecting. Use *ontology file* and *one-file
-ontology* consistently.
+Start a new model as a one-file ontology, with the editor's *New Ontology...*,
+`tonto new ontology <name>`, or MCP's `tonto_new`. Add a package with the
+editor's *New Package...*, `tonto new package <name> --in=<ontology>`, or
+`tonto_new` with `package`: each writes the package file and its bundle entry
+together, splitting a one-file ontology first. Split one without adding a
+package with the editor's *Split into an ontology file and package*
+refactoring, `tonto split <ontology-file>`, or MCP's `tonto_split`. Do none of
+these by hand. Do not create a `tonto.json` unless a location needs
+redirecting. Use *ontology file* and *one-file ontology* consistently.
+
+`tonto init` sets a folder up for Codex and Claude Code without the editor:
+the CLI's instructions in `AGENTS.md`, `CLAUDE.md` importing them, Claude
+Code's hook running `tonto hook` after each edit, and a one-file ontology when
+the folder has no model yet. It registers no MCP server; the editor's *Set Up
+Codex and Claude in Workspace* does, and its instructions replace the CLI's.
 
 ### Ask instead of experimenting
 
@@ -213,7 +223,7 @@ rather than about text. A declaration's `///` documentation comes with it as
 
 `packages/mcp` exposes the same things as tools. They are defined once, in
 `packages/language/src/tools.ts`, and VS Code's language-model tools are the
-same nineteen. Start it with a workspace
+same twenty. Start it with a workspace
 directory if the model has `import`s:
 
     npx tonto-mcp /path/to/models
@@ -244,6 +254,7 @@ protocol at all.
 | `tonto_ast` | the parsed model as JSON, `///` documentation included |
 | `tonto_gufo` | preview the checked model as gUFO Turtle, or regenerate each ontology's `.ttl` beside its ontology file with `write` (or into `outDir`) |
 | `tonto_ontologies` | the ontologies the workspace authors: name, ontology file, namespace, errors |
+| `tonto_new` | start a one-file ontology, or add a package to one with its bundle entry |
 | `tonto_split` | split a saved one-file ontology into its ontology file and package file |
 | `tonto_fetch` | retrieve the ontologies the model imports by location, into the workspace cache |
 | `tonto_tables` | the tables the checks read |

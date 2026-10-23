@@ -10,17 +10,7 @@ Node.js 22 or later.
 
 ## Install
 
-The npm install commands below will work after the first `tonto-language`
-release is published. Until then, from this repository, build the workspace
-and use its local binary:
-
-```sh
-npm install
-npm run build
-./node_modules/.bin/tonto guide
-```
-
-After publication, install globally to make `tonto` available in your shell:
+Install globally to make `tonto` available in your shell:
 
 ```sh
 npm install --global tonto-language
@@ -45,6 +35,27 @@ npx --yes --package=tonto-language tonto guide
 Upgrade a global installation with `npm update --global tonto-language`. A
 project-local installation is upgraded by changing its dependency version and
 running `npm install`.
+
+From a source checkout, build the workspace and use its local binary:
+
+```sh
+npm install
+npm run build
+./node_modules/.bin/tonto guide
+```
+
+## Start a workspace
+
+```sh
+tonto init my-ontology             # agent instructions, Claude Code's hook, a first ontology
+tonto new ontology shop            # another one-file ontology
+tonto new package sales --in=shop  # a package file and its bundle entry
+```
+
+`tonto init` sets a folder up for Codex and Claude Code with this CLI: the
+instructions in `AGENTS.md`, `CLAUDE.md` importing them, and a Claude Code
+hook that checks each edited `.tonto` file. In a folder with no model it also
+writes a one-file ontology named after the folder. It registers no MCP server.
 
 ## Commands
 

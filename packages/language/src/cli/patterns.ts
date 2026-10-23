@@ -288,7 +288,7 @@ event Signing {
  `kind Person
 role Student specializes Person
 historicalRole FormerStudent specializes Person {
-    @participation (const) [0..*] -- [1] Graduation
+    @participation (const) [0..*] -- [1] (const) Graduation
 }
 event Graduation
 kind Course

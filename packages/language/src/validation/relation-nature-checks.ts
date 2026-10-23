@@ -760,10 +760,10 @@ export function checkAccumulates(relation: Relation, accept: ValidationAcceptor)
     if (!source || !isClassDeclaration(source) || !target || !isClassDeclaration(target)) {
         return;
     }
-    // The end that holds what accumulates is the one at the far side from the
-    // whole, and three things accumulate: what constitutes a process, what
-    // makes a process up, and the parts of a situation -- the one thing a
-    // situation may gain while changing in no other way.
+    // Processes accumulate what constitutes or composes them, a situation
+    // accumulates parts, historical dependence accumulates dependents, and an
+    // endurant's history accumulates completed participation and termination
+    // events.
     const whole = isParthood(relation) && wholeEndOf(relation) === 'source';
     const constituted = relation.stereotype === 'constitution'
         && classifiesOnly(source, 'processes') && classifiesOnly(target, 'events');
@@ -771,11 +771,18 @@ export function checkAccumulates(relation: Relation, accept: ValidationAcceptor)
         && classifiesOnly(source, 'processes') && classifiesOnly(target, 'processes');
     const obtaining = whole && isSituationParthood(relation);
     const historical = relation.stereotype === 'historicalDependence';
-    if (!constituted && !composed && !obtaining && !historical) {
+    // A completed event keeps its participants. On the target end this is
+    // each participant's history of such events, which may grow but never
+    // lose a link once the event has happened.
+    const completedParticipation = relation.stereotype === 'participation'
+        && classifiesOnly(target, 'events');
+    const completedTermination = relation.stereotype === 'termination'
+        && classifiesOnly(target, 'events');
+    if (!constituted && !composed && !obtaining && !historical && !completedParticipation && !completedTermination) {
         return;
     }
-    // Three of the four accumulate at the target end; historical dependence
-    // holds its dependents at the source.
+    // The accumulated set is at the target end, except historical dependence,
+    // which holds its dependents at the source.
     const side = historical ? 'source' : 'target';
     const end = historical ? relation.sourceMeta : relation.targetMeta;
     if ((end?.isAddOnly || end?.isConst)) {
@@ -785,25 +792,32 @@ export function checkAccumulates(relation: Relation, accept: ValidationAcceptor)
     // nothing has no decorator to carry its multiplicity.
     const written = historical ? relation.sourceCardinality : relation.targetCardinality;
     const bounds = written ? getBounds(written) : { lower: 1, upper: 1 };
-    // An end that cannot gain has nothing to say `addOnly` about, and an end
-    // fixed at a size is one of those: `[1]`, `[2]`, an omitted bound. `[0..1]`
-    // is not -- going from none to one is the addition this is about, and
-    // reading the upper bound alone skipped it.
-    if (bounds && bounds.lower === bounds.upper) {
+    // A fixed count leaves nothing to add. That skips the process and
+    // situation hints, but a completed-event link still needs `const` there:
+    // without it, a link could be replaced while the count stayed the same.
+    // `[0..1]` is not fixed -- going from none to one is an addition.
+    const completedEventHistory = completedParticipation || completedTermination;
+    if (!completedEventHistory && bounds && bounds.lower === bounds.upper) {
         return;
     }
     const subject = historical
         ? 'Historical dependence never lapses, since what it names has already happened'
-        : obtaining
-            ? 'A situation changes in no other way, but it accumulates parts'
-            : `A process accumulates what ${constituted ? 'constitutes' : 'makes up'} it`;
+        : completedParticipation
+            ? 'Participation in a completed event never lapses'
+            : completedTermination
+                ? 'A termination event remains in the endurant\'s history'
+                : obtaining
+                    ? 'A situation changes in no other way, but it accumulates parts'
+                    : `A process accumulates what ${constituted ? 'constitutes' : 'makes up'} it`;
     // A warning where the natures settle it and a hint where the model may
-    // reasonably be indifferent. Historical dependence is the first kind: what
-    // has come to depend on something past never stops, which is the same fact
-    // as the `(const)` on the far end that `dependence-end-not-const` reports
-    // as a warning. How a process unfolds is the second -- a model that says
-    // nothing about it has not said anything wrong.
-    accept(historical ? 'warning' : 'hint',
-        `${subject}: nothing here is ever taken back, which is "addOnly".`,
+    // reasonably be indifferent. Historical dependence and links to completed
+    // events never lapse; how a process unfolds is the latter kind, where a
+    // model that says nothing about it has not said anything wrong.
+    const fixed = bounds && bounds.lower === bounds.upper;
+    const advice = fixed
+        ? 'mark this end "const"; "addOnly" has nothing to add at this fixed cardinality.'
+        : 'nothing here is ever taken back, which is "addOnly".';
+    accept(historical || completedEventHistory ? 'warning' : 'hint',
+        `${subject}: ${advice}`,
         { node: relation, code: 'accumulating-end-not-add-only', data: { side } });
 }

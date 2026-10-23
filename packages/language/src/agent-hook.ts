@@ -27,8 +27,21 @@ export interface ClaudeHookAnswer {
     hookSpecificOutput?: { hookEventName: 'PostToolUse'; additionalContext: string };
 }
 
+/**
+ * How Claude is told to go on from an error: with the tools, where the
+ * editor's setup serves them, or with the CLI, where `tonto init` set the
+ * folder up and there are no tools to name.
+ */
+const NEXT = {
+    tools: 'Repair them before going on: read a code with tonto_rules, and take a repair with tonto_apply.',
+    cli: 'Repair them before going on: read a code with `tonto rules <code>`, and see each repair\'s edits with '
+        + '`tonto check <file> --json`.'
+} as const;
+
 /** The answer to one PostToolUse event, or nothing for an edit of another file or a clean one. */
-export async function claudeHookAnswer(event: unknown, project = process.env.CLAUDE_PROJECT_DIR): Promise<ClaudeHookAnswer | undefined> {
+export async function claudeHookAnswer(
+    event: unknown, project = process.env.CLAUDE_PROJECT_DIR, setup: keyof typeof NEXT = 'tools'
+): Promise<ClaudeHookAnswer | undefined> {
     if (typeof event !== 'object' || event === null) return undefined;
     const { tool_name: tool, tool_input: input, cwd } = event as { tool_name?: unknown; tool_input?: { file_path?: unknown }; cwd?: unknown };
     if (typeof tool !== 'string' || !new RegExp(`^(${CLAUDE_HOOK_MATCHER})$`).test(tool)) return undefined;
@@ -50,7 +63,7 @@ export async function claudeHookAnswer(event: unknown, project = process.env.CLA
         return {
             decision: 'block',
             reason: `${name} has ${count(errors.length, 'error')} after this edit:\n${renderDiagnostics([...errors, ...warnings])}\n`
-                + 'Repair them before going on: read a code with tonto_rules, and take a repair with tonto_apply.'
+                + NEXT[setup]
         };
     }
     if (warnings.length > 0) {
@@ -65,15 +78,45 @@ export async function claudeHookAnswer(event: unknown, project = process.env.CLA
 }
 
 /**
- * Claude Code's settings with tonto's PostToolUse hook in them, replacing an
- * earlier one -- found by its command naming the hook runtime -- and leaving
- * every other setting and hook as it was.
+ * The hook as the command line installs it, `tonto init`: the installed CLI,
+ * global or this project's. `--no` makes npx refuse to download a package it
+ * does not find, so the hook never runs a CLI nobody installed.
  */
-export function withClaudeHook(settings: Record<string, unknown>, command: string, marker = 'tonto-hook'): Record<string, unknown> {
+export const CLI_HOOK_COMMAND = 'npx --no -- tonto hook';
+
+/**
+ * Whether a hook command is tonto's: the editor's names its staged runtime,
+ * `tonto-hook.mjs`, and the command line's runs `tonto hook`. Either replaces
+ * the other, so a folder set up both ways validates each edit once.
+ */
+function isTontoHook(command: unknown): boolean {
+    return typeof command === 'string' && (command.includes('tonto-hook') || /\btonto hook\b/.test(command));
+}
+
+type PostToolUseEntry = { hooks?: Array<{ command?: unknown }> };
+
+function postToolUse(settings: Record<string, unknown>): PostToolUseEntry[] {
+    const hooks = settings.hooks;
+    if (typeof hooks !== 'object' || hooks === null || Array.isArray(hooks)) return [];
+    const entries = (hooks as Record<string, unknown>).PostToolUse;
+    return Array.isArray(entries) ? entries as PostToolUseEntry[] : [];
+}
+
+/** Whether Claude Code's settings already run a tonto hook: this command, or else the editor's or the command line's. */
+export function hasClaudeHook(settings: Record<string, unknown>, command?: string): boolean {
+    return postToolUse(settings).some(entry => entry.hooks?.some(hook =>
+        command === undefined ? isTontoHook(hook.command) : hook.command === command));
+}
+
+/**
+ * Claude Code's settings with tonto's PostToolUse hook in them, replacing an
+ * earlier one -- found by its command -- and leaving every other setting and
+ * hook as it was.
+ */
+export function withClaudeHook(settings: Record<string, unknown>, command: string): Record<string, unknown> {
     const hooks = typeof settings.hooks === 'object' && settings.hooks !== null && !Array.isArray(settings.hooks)
         ? { ...settings.hooks as Record<string, unknown> } : {};
-    const existing = Array.isArray(hooks.PostToolUse) ? hooks.PostToolUse as Array<{ hooks?: Array<{ command?: unknown }> }> : [];
-    const others = existing.filter(entry => !entry.hooks?.some(hook => typeof hook.command === 'string' && hook.command.includes(marker)));
+    const others = postToolUse(settings).filter(entry => !entry.hooks?.some(hook => isTontoHook(hook.command)));
     hooks.PostToolUse = [...others, { matcher: CLAUDE_HOOK_MATCHER, hooks: [{ type: 'command', command, timeout: 60 }] }];
     return { ...settings, hooks };
 }
@@ -91,11 +134,11 @@ function count(amount: number, singular: string): string {
 }
 
 /** Reads the event from standard input and prints the answer: how Claude Code runs the hook. */
-export async function runClaudeHook(): Promise<void> {
+export async function runClaudeHook(setup: keyof typeof NEXT = 'tools'): Promise<void> {
     let text = '';
     for await (const chunk of process.stdin) text += chunk;
     let event: unknown;
     try { event = JSON.parse(text); } catch { return; }
-    const answer = await claudeHookAnswer(event);
+    const answer = await claudeHookAnswer(event, undefined, setup);
     if (answer) process.stdout.write(JSON.stringify(answer));
 }

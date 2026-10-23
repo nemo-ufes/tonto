@@ -4,6 +4,7 @@ import { guide } from './cli/guide.js';
 import { catalog as patternCatalog, missingPattern } from './cli/patterns.js';
 import { catalog as ruleCatalog } from './cli/rules.js';
 import { tablesJson } from './cli/tables.js';
+import { isAbsolute, resolve } from 'node:path';
 import { writeBeside, writeInto } from './exports.js';
 import type { WrittenFile } from './exports.js';
 
@@ -530,6 +531,53 @@ export const TOOLS: readonly ToolDefinition[] = [
                 : ontologies.map(ontology => `${ontology.name}  ${host.display(ontology.file)}  ${ontology.namespace ?? '(no namespace)'}`
                     + (ontology.errors ? `  ${ontology.errors} error${ontology.errors === 1 ? '' : 's'}` : '')).join('\n');
             return { text, data: { ontologies } };
+        }
+    },
+    {
+        name: 'tonto_new',
+        title: 'Start an ontology, or add a package',
+        progress: 'Writing the new tonto file…',
+        description: () => 'Use to start an ontology or add a package to one, instead of writing headers and bundle entries '
+            + 'by hand. Without package, writes <ontology>.tonto, a one-file ontology (a workspace\'s first has a sample '
+            + 'class); with package, writes its package file and bundle entry, splitting a one-file ontology first. '
+            + 'Never replaces a file.',
+        input: {
+            type: 'object',
+            properties: {
+                ontology: { type: 'string', description: 'The new ontology\'s name, or the ontology the package joins.' },
+                package: { type: 'string', description: 'A package to add to it, e.g. "sales".' },
+                folder: { type: 'string', description: 'Workspace-relative folder for the file; by default the root, or for a package its ontology file\'s.' }
+            },
+            required: ['ontology']
+        },
+        run: async (input, host) => {
+            const ontology = required(input, 'ontology');
+            const name = string(input, 'package');
+            const folder = string(input, 'folder');
+            const root = host.workspaceRoot();
+            if (folder !== undefined && isAbsolute(folder)) throw new ToolError('"folder" must be relative to the workspace.');
+            const directory = folder === undefined ? undefined : resolve(root, folder);
+            const session = host.session();
+            try {
+                if (name === undefined) {
+                    const result = await session.newOntology(ontology, directory ?? root);
+                    return {
+                        text: `Wrote ${host.display(result.file)}, the one-file ontology "${result.ontology}".`
+                            + (result.sample ? ' It starts with a sample class, as a workspace\'s first ontology does.' : ''),
+                        data: { ...result }
+                    };
+                }
+                const result = await session.newPackage(name, { ontology, folder: directory });
+                return {
+                    text: (result.split ? `"${result.ontology}" was a one-file ontology: its declarations are now package `
+                        + `"${result.split.packageName}", in ${host.display(result.split.packageFile)}.\n` : '')
+                        + `Wrote ${host.display(result.packageFile)}, package "${result.packageName}" of "${result.ontology}", `
+                        + `bundled in ${host.display(result.ontologyFile)}.`,
+                    data: { ...result }
+                };
+            } catch (error) {
+                throw new ToolError(error instanceof Error ? error.message : String(error));
+            }
         }
     },
     {

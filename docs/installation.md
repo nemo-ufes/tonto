@@ -46,10 +46,8 @@ To return to it later, run **Tonto: Get Started** from the Command Palette.
 ### Optional: install the standalone CLI
 
 The CLI is a separate npm package; it is not needed by the VS Code extension.
-The npm installation commands below will work after its first release. Until
-then, build a source checkout with `npm install` and `npm run build`, then use
-`./node_modules/.bin/tonto`. The standalone CLI requires Node.js 22 or later.
-After publication, install it globally for a shell-wide command:
+The standalone CLI requires Node.js 22 or later. Install it globally for a
+shell-wide command:
 
 ```sh
 npm install --global tonto-language
@@ -254,6 +252,24 @@ VS Code's internal runtime. Such use requires the separately distributed tonto
 CLI or MCP package and Node.js 22 or later. This is an optional, advanced setup
 and is not needed for ordinary VS Code use.
 
+With the CLI installed, `tonto init` sets up a folder for a terminal agent:
+
+```sh
+tonto init my-ontology
+```
+
+It writes instructions for the CLI in `AGENTS.md`, which Codex and Claude Code
+read; a `CLAUDE.md` that imports them; and a Claude Code hook in
+`.claude/settings.json` that runs `npx --no -- tonto hook` to check each
+`.tonto` file Claude edits. In a folder with no model yet it also writes a
+one-file ontology named after the folder (`--ontology=<name>` names it,
+`--no-ontology` skips it). It registers no MCP server. Existing files keep
+their other content, and running it again changes nothing. If the folder was
+already set up with **Tonto: Set Up Codex and Claude in Workspace**, its
+instructions and hook are kept. `tonto new ontology <name>` and
+`tonto new package <name> --in=<ontology>` add ontologies and packages
+afterward.
+
 ### Troubleshooting
 
 - **A `.tonto` file appears as plain text:** enable the tonto extension and
@@ -325,10 +341,7 @@ com o agente para carregar novas ferramentas ou parâmetros.
 
 A CLI é um pacote npm separado e não é necessária para usar a extensão do VS
 Code. É preciso ter Node.js 22 ou posterior. Para disponibilizar `tonto` no
-terminal, após a primeira publicação do pacote:
-
-Até lá, no checkout do repositório, execute `npm install` e `npm run build`,
-depois use `./node_modules/.bin/tonto`.
+terminal, instale-o globalmente:
 
 ```sh
 npm install --global tonto-language
@@ -524,6 +537,26 @@ integração contínua ou outro processo externo não pode utilizar a versão
 interna do Node.js do VS Code. Esses casos exigem o pacote separado da linha de
 comando ou do servidor MCP do tonto e Node.js 22 ou posterior. Essa é uma
 configuração opcional e avançada, desnecessária para o uso normal no VS Code.
+
+Com a linha de comando instalada, `tonto init` prepara uma pasta para um
+agente de terminal:
+
+```sh
+tonto init minha-ontologia
+```
+
+O comando escreve instruções para a linha de comando em `AGENTS.md`, lidas pelo
+Codex e pelo Claude Code; um `CLAUDE.md` que as importa; e um hook do Claude
+Code em `.claude/settings.json` que executa `npx --no -- tonto hook` para
+verificar cada arquivo `.tonto` editado pelo Claude. Em uma pasta ainda sem
+modelo, escreve também uma ontologia de arquivo único com o nome da pasta
+(`--ontology=<nome>` define o nome; `--no-ontology` a omite). Nenhum servidor
+MCP é registrado. Arquivos existentes mantêm o restante de seu conteúdo, e
+executar o comando novamente não altera nada. Se a pasta já foi configurada
+com **Tonto: Set Up Codex and Claude in Workspace**, suas instruções e seu
+hook são mantidos. `tonto new ontology <nome>` e
+`tonto new package <nome> --in=<ontologia>` acrescentam ontologias e pacotes
+depois.
 
 ### Solução de problemas
 

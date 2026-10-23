@@ -1466,8 +1466,14 @@ export class TontoCodeActionProvider implements CodeActionProvider {
                 ];
             case 'add-only-on-immutable':
                 return asArray(this.replaceFlag(document, diagnostic, 'addOnly', 'const'));
-            case 'accumulating-end-not-add-only':
-                return asArray(this.markEnd(document, diagnostic, 'addOnly'));
+            case 'accumulating-end-not-add-only': {
+                const atSource = (diagnostic.data as { side?: string } | undefined)?.side === 'source';
+                const relation = this.nodeAt(document, diagnostic, isRelation);
+                const cardinality = atSource ? relation?.sourceCardinality : relation?.targetCardinality;
+                const bounds = cardinality ? getBounds(cardinality) : { lower: 1, upper: 1 };
+                const keyword = bounds && bounds.lower === bounds.upper ? 'const' : 'addOnly';
+                return asArray(this.markEnd(document, diagnostic, keyword));
+            }
             case 'add-only-not-propagated':
                 return asArray(this.markEnd(document, diagnostic, 'addOnly'));
             case 'self-inverse':

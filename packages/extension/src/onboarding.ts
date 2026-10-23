@@ -4,6 +4,10 @@ import type { ExtensionContext, TextDocumentContentProvider, Uri, WorkspaceFolde
 import * as vscode from 'vscode';
 import type { LanguageClient } from 'vscode-languageclient/node';
 import { withClaudeHook } from 'tonto-language/agent-hook';
+import {
+    AGENTS_IMPORT, EDITOR_INSTRUCTIONS_START, ONTOLOGY_NAME_HINT, defaultOntologyName, starterOntology, validOntologyName,
+    withAgentsImport, withTontoInstructions
+} from 'tonto-language/onboarding';
 
 const WALKTHROUGH = 'nemo-ufes.tonto-vscode#tonto.getStarted';
 const GUIDE_URI = vscode.Uri.from({ scheme: 'tonto-reference', path: '/tonto Language Guide.md' });
@@ -59,10 +63,10 @@ export async function newOntology(context: ExtensionContext, client: LanguageCli
     const ontologyName = await vscode.window.showInputBox({
         title: 'New tonto ontology',
         prompt: 'Name of the ontology',
-        value: existing.length ? '' : defaultOntologyName(folder.uri),
+        value: existing.length ? '' : defaultOntologyName(folder.uri.fsPath),
         ignoreFocusOut: true,
         validateInput: value => !validOntologyName(value)
-            ? 'Use one lower-case name, for example "sales" or "university".'
+            ? ONTOLOGY_NAME_HINT
             : existing.includes(value) ? `This workspace already has an ontology "${value}".` : undefined
     });
     if (!ontologyName) return;
@@ -81,9 +85,7 @@ export async function newOntology(context: ExtensionContext, client: LanguageCli
         return;
     }
 
-    const source = existing.length
-        ? `ontology ${ontologyName}\n\n`
-        : `ontology ${ontologyName}\n\n/// A person, in the everyday sense.\nkind Person\n`;
+    const source = starterOntology(ontologyName, existing.length === 0);
     await vscode.workspace.fs.writeFile(target, new TextEncoder().encode(source));
     const configured = await setupStarterAgents(context, root);
     void vscode.window.showInformationMessage(`Created ${filename}${configured ? ', and set up Codex and Claude for this folder' : ''}.`);
@@ -145,7 +147,7 @@ async function agentsSetUp(folder: Uri): Promise<boolean> {
     const claude = await readText(vscode.Uri.joinPath(folder, '.mcp.json'));
     const codex = await readText(vscode.Uri.joinPath(folder, '.codex', 'config.toml'));
     const hook = await readText(vscode.Uri.joinPath(folder, '.claude', 'settings.json'));
-    return instructions.includes(INSTRUCTIONS_START) && claude.includes('"tonto-vscode"') && codex.includes(CODEX_BLOCK_START)
+    return instructions.includes(EDITOR_INSTRUCTIONS_START) && claude.includes('"tonto-vscode"') && codex.includes(CODEX_BLOCK_START)
         && hook.includes('tonto-hook');
 }
 
@@ -208,49 +210,18 @@ async function installAgentInstructions(
     }
 
     const claude = vscode.Uri.joinPath(folder, 'CLAUDE.md');
-    const claudeImport = '@AGENTS.md\n';
     if (!await exists(claude)) {
-        await vscode.workspace.fs.writeFile(claude, new TextEncoder().encode(claudeImport));
+        await vscode.workspace.fs.writeFile(claude, new TextEncoder().encode(AGENTS_IMPORT));
         changed.push('CLAUDE.md');
     } else if (mergeExisting) {
         const current = new TextDecoder().decode(await vscode.workspace.fs.readFile(claude));
-        if (!/(?:^|\n)@AGENTS\.md(?:\s|$)/.test(current)) {
-            await vscode.workspace.fs.writeFile(claude, encodeAppend(current, claudeImport));
+        const updated = withAgentsImport(current);
+        if (updated !== current) {
+            await vscode.workspace.fs.writeFile(claude, new TextEncoder().encode(updated));
             changed.push('CLAUDE.md');
         }
     }
     return changed;
-}
-
-const INSTRUCTIONS_START = '<!-- tonto-model-instructions -->';
-const INSTRUCTIONS_END = '<!-- /tonto-model-instructions -->';
-/** How every version of the instructions has ended, before they carried an end marker. */
-const OLD_LAST_LINE = 'changing the source model.';
-
-/**
- * The file with tonto's own block replaced by the current one, or added at the
- * end when it has none, so that running the setup again brings the
- * instructions up to date. Only the block is touched: from its start marker to
- * its end marker, or, in a block written before there was one, to the line
- * every earlier version ended with. A block whose end cannot be found is left
- * as it is rather than guessed at.
- */
-function withTontoInstructions(current: string, template: string): string {
-    const start = current.indexOf(INSTRUCTIONS_START);
-    if (start < 0) return new TextDecoder().decode(encodeAppend(current, template));
-    let end = current.indexOf(INSTRUCTIONS_END, start);
-    if (end >= 0) {
-        end += INSTRUCTIONS_END.length;
-    } else {
-        const last = current.indexOf(OLD_LAST_LINE, start);
-        if (last < 0) return current;
-        end = last + OLD_LAST_LINE.length;
-    }
-    return current.slice(0, start) + template.trim() + current.slice(end);
-}
-
-function encodeAppend(current: string, addition: string): Uint8Array {
-    return new TextEncoder().encode(`${current.trimEnd()}\n\n${addition.trimStart()}`);
 }
 
 async function installAgentTools(context: ExtensionContext, folder: Uri): Promise<string[]> {
@@ -418,21 +389,6 @@ async function chooseFolder(): Promise<WorkspaceFolder | undefined> {
     });
     const uri = selected?.[0];
     return uri ? { uri, name: path.basename(uri.fsPath), index: 0 } : undefined;
-}
-
-function defaultOntologyName(folder: Uri): string {
-    const normalized = path.basename(folder.fsPath)
-        .normalize('NFKD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9_]+/g, '_')
-        .replace(/^_+|_+$/g, '');
-    return /^[a-z]/.test(normalized) ? normalized : normalized ? `model_${normalized}` : 'model';
-}
-
-/** One identifier, entirely lowercase, as ontology names are. */
-function validOntologyName(value: string): boolean {
-    return /^[a-z][a-z0-9_]*$/.test(value);
 }
 
 async function exists(uri: Uri): Promise<boolean> {

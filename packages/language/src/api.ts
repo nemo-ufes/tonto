@@ -1,8 +1,8 @@
 import {
-    existsSync, lstatSync, readFileSync, readdirSync, statSync, writeFileSync
+    existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync
 } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import type { CodeAction, Diagnostic, TextEdit } from 'vscode-languageserver';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import type { CodeAction, Diagnostic, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { CodeActionKind } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { isAstNode } from 'langium';
@@ -26,9 +26,12 @@ import { publicationWorkspace, closureOf } from './publication/workspace.js';
 import { declaredNamespace } from './utils/namespaces.js';
 import type { FetchResult } from './publication/workspace.js';
 import { resetDerivedCaches } from './utils/derived-cache.js';
-import { canonicalPath } from './utils/paths.js';
+import { canonicalPath, canonicalRealPath } from './utils/paths.js';
 import { writeWorkspaceFiles } from './exports.js';
-import { splitOneFileOntologyFiles } from './lsp/ontology-actions.js';
+import type { WorkspaceFileChange } from './exports.js';
+import { authoredOntologies, newPackageEdit, splitOneFileOntologyFiles } from './lsp/ontology-actions.js';
+import type { AuthoredOntology } from './lsp/ontology-actions.js';
+import { ONTOLOGY_NAME_HINT, starterOntology, validOntologyName } from './onboarding.js';
 
 /** LSP completion kinds, named rather than numbered, since a reader is reading. */
 const KINDS: Record<number, string> = {
@@ -91,6 +94,23 @@ export interface SplitOntologyResult {
     packageName: string;
     ontologyFile: string;
     packageFile: string;
+}
+
+export interface NewOntologyResult {
+    ontology: string;
+    /** Its ontology file, `<ontology>.tonto`. */
+    file: string;
+    /** Whether it starts with the sample class, as the first ontology of a workspace does. */
+    sample: boolean;
+}
+
+export interface NewPackageResult {
+    ontology: string;
+    packageName: string;
+    packageFile: string;
+    ontologyFile: string;
+    /** Where a one-file ontology's declarations went, when it was split to bundle the package. */
+    split?: { packageName: string; packageFile: string };
 }
 
 /** Every `.tonto` file under the given paths; files are taken as given. */
@@ -231,6 +251,35 @@ export function applyEdits(text: string, document: LangiumDocument, edits: TextE
         barrier = edit.start;
     }
     return out;
+}
+
+/**
+ * A workspace edit as the files it writes, in order: a file the edit creates
+ * is written whole and must not be there already; a file it edits must still
+ * be, and is written with the edits applied to what was read of it.
+ */
+function fileChanges(edit: WorkspaceEdit, documentOf: (uri: string) => LangiumDocument | undefined): Array<WorkspaceFileChange & { path: string }> {
+    const files = new Map<string, { document: TextDocument; created: boolean }>();
+    for (const change of edit.documentChanges ?? []) {
+        if ('kind' in change) {
+            if (change.kind !== 'create') throw new Error(`An edit that ${change.kind}s a file is not written here.`);
+            files.set(change.uri, { document: TextDocument.create(change.uri, 'tonto', 0, ''), created: true });
+            continue;
+        }
+        const uri = change.textDocument.uri;
+        let file = files.get(uri);
+        if (!file) {
+            const document = documentOf(uri);
+            if (!document) throw new Error(`${URI.parse(uri).fsPath} is not loaded.`);
+            file = { document: TextDocument.create(uri, 'tonto', 0, document.textDocument.getText()), created: false };
+            files.set(uri, file);
+        }
+        const text = TextDocument.applyEdits(file.document, change.edits.filter((one): one is TextEdit => 'range' in one));
+        file.document = TextDocument.create(uri, 'tonto', file.document.version + 1, text);
+    }
+    return [...files.entries()].map(([uri, file]) => ({
+        path: URI.parse(uri).fsPath, content: file.document.getText(), ...(file.created ? { createOnly: true } : { mustExist: true })
+    }));
 }
 
 /** One repair, chosen by name, and what applying it left behind. */
@@ -615,6 +664,112 @@ export class TontoSession {
                 packageFile: split.packageFile
             };
         });
+    }
+
+    /**
+     * A new one-file ontology, `<name>.tonto` in `folder` or the workspace's
+     * root: the header, and for the workspace's first ontology a sample class.
+     * It grows packages with `newPackage`. Refused for a name that is not an
+     * ontology name or that an ontology of the workspace already has, and for
+     * a file already there.
+     */
+    async newOntology(name: string, folder?: string): Promise<NewOntologyResult> {
+        return this.oneAtATime(async () => {
+            if (!validOntologyName(name)) throw new Error(`"${name}" is not an ontology name. ${ONTOLOGY_NAME_HINT}`);
+            const { root, directory } = this.placeIn(folder);
+            const known = await this.authored();
+            if (known.some(ontology => ontology.name === name)) throw new Error(`The workspace already has an ontology "${name}".`);
+            const file = join(directory, `${name}.tonto`);
+            if (existsSync(file)) throw new Error(`${relative(root, file).split(sep).join('/')} already exists.`);
+            const sample = known.length === 0;
+            const content = starterOntology(name, sample);
+            // A name the lexer reads as something else is written once and
+            // then fails to parse; better to say so than to write it.
+            const parsed = this.services.Tonto.parser.LangiumParser.parse<Model>(content);
+            if (parsed.lexerErrors.length > 0 || parsed.parserErrors.length > 0) {
+                throw new Error(`"${name}" cannot be an ontology's name: the header does not read with it.`);
+            }
+            mkdirSync(directory, { recursive: true });
+            writeWorkspaceFiles(root, [{ path: relative(root, file), content, createOnly: true }]);
+            await this.services.shared.workspace.DocumentBuilder.update([URI.file(file)], []);
+            return { ontology: name, file, sample };
+        });
+    }
+
+    /**
+     * A new package of one of the workspace's ontologies: its package file,
+     * starting `package <name> in <ontology>`, in `folder` or beside the
+     * ontology file, and its bundle entry in the ontology file -- the edit the
+     * editor's New Package... applies, written to disk. A one-file ontology is
+     * split first, in the same write. The ontology may go unnamed when the
+     * workspace has only one.
+     */
+    async newPackage(name: string, options: { ontology?: string; folder?: string } = {}): Promise<NewPackageResult> {
+        return this.oneAtATime(async () => {
+            const known = await this.authored();
+            const names = known.map(ontology => `"${ontology.name}"`).join(', ');
+            const chosen = options.ontology !== undefined
+                ? known.find(ontology => ontology.name === options.ontology)
+                : known.length === 1 ? known[0] : undefined;
+            if (!chosen) {
+                throw new Error(known.length === 0 ? 'The workspace has no ontology yet, and a package belongs to one. Start an ontology first.'
+                    : options.ontology !== undefined ? `The workspace has no ontology "${options.ontology}". It has ${names}.`
+                        : `Name the ontology the package joins: the workspace has ${names}.`);
+            }
+            const ontologyFile = URI.parse(chosen.uri).fsPath;
+            const { root, directory } = this.placeIn(options.folder ?? dirname(ontologyFile));
+            const store = this.services.shared.workspace.LangiumDocuments;
+            const document = store.getDocument(URI.parse(chosen.uri));
+            if (!document) throw new Error(`Could not read the ontology file of "${chosen.name}".`);
+            const result = newPackageEdit(document, name, directory, publicationWorkspace(this.services.shared));
+            if ('problem' in result) throw new Error(result.problem);
+            const changes = fileChanges(result.edit, uri => store.getDocument(URI.parse(uri)));
+            mkdirSync(directory, { recursive: true });
+            writeWorkspaceFiles(root, changes.map(change => ({ ...change, path: relative(root, change.path) })));
+            await this.services.shared.workspace.DocumentBuilder.update(changes.map(change => URI.file(change.path)), []);
+            const packageFile = URI.parse(result.uri).fsPath;
+            const moved = changes.find(change => change.createOnly && change.path !== packageFile);
+            return {
+                ontology: chosen.name, packageName: name, packageFile, ontologyFile,
+                ...(result.split && moved ? { split: { packageName: result.split, packageFile: moved.path } } : {})
+            };
+        });
+    }
+
+    /** The workspace's ontologies as they are on disk now, read without validating them. */
+    private async authored(): Promise<AuthoredOntology[]> {
+        await this.open();
+        const wanted = new Set(this.folders().flatMap(folder => collectFiles([folder])));
+        await this.syncWorkspace(wanted);
+        await this.services.shared.workspace.DocumentBuilder.build(this.documents(wanted), { validation: false });
+        return authoredOntologies(publicationWorkspace(this.services.shared));
+    }
+
+    /**
+     * A directory a new file may go in, and the workspace folder it is in. It
+     * need not exist yet. Containment is decided on real paths, so a folder
+     * reached through a link is not taken for a place outside; the answer is
+     * in the workspace's own form, the one its documents are loaded under,
+     * since a file written under another spelling would load a second time.
+     */
+    private placeIn(folder: string | undefined): { root: string; directory: string } {
+        const folders = this.folders();
+        if (folders.length === 0) throw new Error('This needs a workspace directory to write in.');
+        let existing = folder === undefined ? folders[0] : canonicalPath(folder);
+        const missing: string[] = [];
+        while (!existsSync(existing) && dirname(existing) !== existing) {
+            missing.unshift(basename(existing));
+            existing = dirname(existing);
+        }
+        const real = join(canonicalRealPath(existing), ...missing);
+        for (const root of folders) {
+            const fromRoot = relative(canonicalRealPath(root), real);
+            if (fromRoot === '..' || fromRoot.startsWith(`..${sep}`) || isAbsolute(fromRoot)) continue;
+            const directory = join(root, fromRoot);
+            if (existsSync(directory) && !statSync(directory).isDirectory()) throw new Error(`"${folder}" is not a directory.`);
+            return { root, directory };
+        }
+        throw new Error(`"${folder}" is outside the workspace.`);
     }
 
     /**

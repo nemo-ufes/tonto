@@ -175,19 +175,17 @@ The signed tag identifies the release source; the GitHub Release is the
 download page. The workflow requires the `RELEASE_SIGNING_PUBLIC_KEY` secret
 and `RELEASE_SIGNING_FINGERPRINT` variable even when publishing only to
 GitHub. Protect the `v*` tag namespace and configure CI to accept only the
-trusted release signer. When registry publishing is ready, configure npm and
-Marketplace trusted publishing, then select the corresponding options when
-dispatching the workflow. Since those registries do not publish atomically,
-the workflow checks for an identical existing npm package and skips duplicate
-Marketplace versions.
+trusted release signer. The workflow checks for an identical existing npm
+package and skips duplicate Marketplace versions.
 
 CI enforces version agreement with `npm run versions:check`. For a GitHub-only
 release, configure the release signing secret and variable described above;
-no npm or Marketplace credentials are needed. Before enabling either
-publication option, configure [`tonto-language` on npm to trust the GitHub
-Actions workflow](https://docs.npmjs.com/trusted-publishers/) and configure
-trusted publishing for the `nemo-ufes` Marketplace publisher and that
-workflow. No long-lived publishing tokens are used.
+no npm or Marketplace credentials are needed. Before enabling npm publication,
+configure [`tonto-language` on npm to trust the GitHub Actions
+workflow](https://docs.npmjs.com/trusted-publishers/). Before enabling
+Marketplace publication, configure trusted publishing for the `nemo-ufes`
+publisher and that workflow. The npm package is already published, so its
+trust relationship can now be added. No long-lived publishing tokens are used.
 
 After release, CLI users update through npm. VS Code distributes the
 extension update through the Marketplace; that extension contains the

@@ -2105,7 +2105,7 @@ describe('UFO 2021: dependence and mereology axioms', () => {
             expect(fixed.text).toContain('(const birth) Birth');
         });
 
-        test('a termination is a different shape, and is asked nothing', async () => {
+        test('a termination event stays in the endurant history', async () => {
             // Its event end is `[0..1]`: the link is made once, when the
             // individual ceases to exist, and never broken -- `(addOnly)`,
             // which is what the snippet writes.
@@ -3628,6 +3628,36 @@ describe('addOnly: a collection that only grows', () => {
             'package p\nkind Man\nkind Person {\n@historicalDependence [*] -- born -- [1] (const) Man\n}');
         expect(diagnostics.filter(d => d.code === 'accumulating-end-not-add-only').map(d => d.severity),
             messages(diagnostics)).toEqual([DiagnosticSeverity.Warning]);
+    });
+
+    test('a participant never loses a link to a completed event', async () => {
+        const attended = (targetEnd: string, bound = '[0..*]'): string =>
+            `package p\nkind Person\nevent Graduation\n`
+            + `@participation relation Person (const) [1] -- attended -- ${bound} ${targetEnd} Graduation`;
+
+        await expectWarning(attended(''), /Participation in a completed event never lapses/);
+        await expectNoWarnings(attended('(addOnly)'));
+        await expectNoWarnings(attended('(const)'));
+
+        // With a fixed count, addOnly has nothing to add; const still prevents
+        // a link from being replaced by another completed event.
+        await expectWarning(attended('', '[1]'), /mark this end "const"/);
+        await expectNoWarnings(attended('(const)', '[1]'));
+    });
+
+    test('an endurant never loses a link to its termination event', async () => {
+        const terminated = (targetEnd: string, bound = '[0..1]'): string =>
+            `package p\nkind Person\nevent Death\n`
+            + `@termination relation Person (const) [1] -- diedIn -- ${bound} ${targetEnd} Death`;
+
+        await expectWarning(terminated(''), /termination event remains in the endurant's history/);
+        await expectNoWarnings(terminated('(addOnly)'));
+        await expectNoWarnings(terminated('(const)'));
+
+        // When the cardinality is fixed, const prevents the event link from
+        // being replaced; addOnly has nothing to add.
+        await expectWarning(terminated('', '[1]'), /mark this end "const"/);
+        await expectNoWarnings(terminated('(const)', '[1]'));
     });
 
     test('a redefinition may strengthen it, never weaken it', async () => {

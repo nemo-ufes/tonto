@@ -67,6 +67,8 @@ npx tonto rules material-cardinality-weaker
 npx tonto format model.tonto
 npx tonto ast model.tonto
 npx tonto ontologies
+npx tonto new ontology shop
+npx tonto new package sales --in=shop
 ```
 
 `check` returns status 1 for errors. Its JSON diagnostics include a stable
@@ -86,13 +88,13 @@ the authored model.
 
 ## Agent tools
 
-`packages/language/src/tools.ts` defines eighteen tools once. The extension
+`packages/language/src/tools.ts` defines twenty tools once. The extension
 exposes them as VS Code language-model tools and through its bundled local MCP
 server for Codex and Claude Code. They cover the guide, validation, rules,
 patterns, completion, repairs, formatting, AST, structural review, edit
-comparison, held draft files, dependency retrieval, and gUFO export. Four
-resources and two prompts provide the reading and draft/review workflows over
-MCP.
+comparison, held draft files, new ontologies and packages, dependency
+retrieval, and gUFO export. Four resources and two prompts provide the reading
+and draft/review workflows over MCP.
 
 Run **Tonto: Set Up Codex and Claude in Workspace** to install project
 instructions and configure the bundled server. The extension also installs
@@ -100,7 +102,15 @@ a Claude Code hook that checks each edited `.tonto` file immediately. See
 [installation.md](installation.md#3-use-the-codex-or-claude-code-extension)
 for the generated files and connection steps.
 
+Without the editor, `tonto init` sets a folder up for Codex and Claude Code
+with the installed CLI instead: instructions written for the CLI in
+`AGENTS.md`, `CLAUDE.md` importing them, the same Claude Code hook run as
+`tonto hook`, and a one-file ontology when the folder has no model yet. It
+registers no MCP server. Running the editor's setup later replaces the CLI's
+instructions and hook with its own.
+
 Modeling tools return proposed source or edits; they do not silently rewrite
-`.tonto` files. The gUFO export tool can write generated Turtle when explicitly
-asked to do so. The shared tool definitions keep the editor and MCP answers
+`.tonto` files. `tonto_new` and `tonto_split` write new model files when called,
+and never replace one; the gUFO export tool can write generated Turtle when
+explicitly asked to do so. The shared tool definitions keep the editor and MCP answers
 consistent.

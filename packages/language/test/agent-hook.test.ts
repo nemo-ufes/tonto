@@ -2,7 +2,7 @@ import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { claudeHookAnswer, withClaudeHook } from '../src/agent-hook.js';
+import { CLI_HOOK_COMMAND, claudeHookAnswer, hasClaudeHook, withClaudeHook } from '../src/agent-hook.js';
 
 /** A project with one file, and the event Claude Code sends after editing it. */
 function edited(source: string, tool = 'Edit', name = 'shop.tonto'): { event: unknown; project: string } {
@@ -53,5 +53,24 @@ describe('the Claude Code hook that validates each edit', () => {
             model: 'opus',
             hooks: { Stop: [], PostToolUse: [mine, { matcher: 'Edit|MultiEdit|Write', hooks: [{ type: 'command', command: 'node /new/tonto-hook.mjs', timeout: 60 }] }] }
         });
+    });
+
+    test('is one hook whichever setup wrote it: the editor\'s replaces the command line\'s, and the other way round', () => {
+        const cli = withClaudeHook({}, CLI_HOOK_COMMAND);
+        expect(hasClaudeHook(cli)).toBe(true);
+        expect(hasClaudeHook(cli, CLI_HOOK_COMMAND)).toBe(true);
+        const editor = withClaudeHook(cli, 'node /staged/tonto-hook.mjs');
+        expect(JSON.stringify(editor)).not.toContain(CLI_HOOK_COMMAND);
+        expect(hasClaudeHook(editor)).toBe(true);
+        expect(hasClaudeHook(editor, CLI_HOOK_COMMAND)).toBe(false);
+        expect((withClaudeHook(editor, CLI_HOOK_COMMAND).hooks as { PostToolUse: unknown[] }).PostToolUse).toHaveLength(1);
+        expect(hasClaudeHook({ hooks: { PostToolUse: [{ hooks: [{ command: 'echo tonto' }] }] } })).toBe(false);
+    });
+
+    test('names the CLI rather than the tools, where the folder was set up for the CLI', async () => {
+        const { event, project } = edited('ontology shop\nkind Person\nkind Student specializes Person\n');
+        const answer = await claudeHookAnswer(event, project, 'cli');
+        expect(answer?.reason).toContain('`tonto rules <code>`');
+        expect(answer?.reason).not.toContain('tonto_apply');
     });
 });

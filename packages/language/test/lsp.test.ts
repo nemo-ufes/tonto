@@ -1287,7 +1287,7 @@ describe('create a missing declaration', () => {
         // it classifies.
         expect(await repairsFor([
             'package p', 'kind Person {',
-            '@participation (const) [2..*] -- participatedIn -- [*] Meeting', '}', 'event Reunião'
+            '@participation (const) [2..*] -- participatedIn -- [*] (addOnly) Meeting', '}', 'event Reunião'
         ].join('\n'))).toEqual([
             'Change to "Reunião"', 'Create event "Meeting"', 'Create process "Meeting"',
             'Create category "Meeting" of events, processes'
@@ -1303,7 +1303,7 @@ describe('create a missing declaration', () => {
         // Reported case: `inverseOf joinedByParticipant` offered a kind, an
         // event, a situation, an abstractum and a category of that name, none
         // of which would resolve it.
-        expect(await repairsFor('package p\nevent Meeting\nkind Person {\n@participation (const) [2..*] -- participatedIn -- [*] Meeting inverseOf joinedByParticipant\n}\n'))
+        expect(await repairsFor('package p\nevent Meeting\nkind Person {\n@participation (const) [2..*] -- participatedIn -- [*] (addOnly) Meeting inverseOf joinedByParticipant\n}\n'))
             .toEqual(['Write the inverse "joinedByParticipant"', 'Remove "inverseOf"']);
         expect(await repairsFor('package p\nkind Person\nhistoricalRole Graduate specializes Person derivedFrom Student.graduatedIn\n'))
             .toEqual(['Remove "derivedFrom"']);
@@ -1347,8 +1347,8 @@ describe('create a missing declaration', () => {
 
         test('a participation as a plain association, since an event takes part in nothing', async () => {
             const applied = await withTheInverse(
-                'package p\nevent Reunião\nkind Pessoa {\n@participation (const) [2..*] -- participouEm -- [*] Reunião inverseOf teveParticipante\n}\n');
-            expect(applied).toContain('event Reunião {\n    [*] -- teveParticipante -- [2..*] (const) Pessoa '
+                'package p\nevent Reunião\nkind Pessoa {\n@participation (const) [2..*] -- participouEm -- [*] (addOnly) Reunião inverseOf teveParticipante\n}\n');
+            expect(applied).toContain('event Reunião {\n    (addOnly) [*] -- teveParticipante -- [2..*] (const) Pessoa '
                 + 'inverseOf Pessoa.participouEm\n}');
             expect(applied).toContain('inverseOf Reunião.teveParticipante');
             await cleanly(applied);
@@ -3374,6 +3374,34 @@ describe('repairs for "addOnly"', () => {
         expect(actions.map(a => a.title)).toEqual(['Mark the end "addOnly"']);
         expect(applyFirst(document, actions)).toContain('[1..*] (addOnly) Fold');
     });
+
+    test('a completed-event participation repair chooses by cardinality', async () => {
+        const variable = await parse('package p\nkind Person\nevent Graduation\n'
+            + '@participation relation Person (const) [1] -- graduatedIn -- [0..*] Graduation');
+        const variableFix = await fixesFor(variable, 'accumulating-end-not-add-only');
+        expect(variableFix.map(action => action.title)).toEqual(['Mark the end "addOnly"']);
+        expect(applyFirst(variable, variableFix)).toContain('[0..*] (addOnly) Graduation');
+
+        const fixed = await parse('package p\nkind Person\nevent Graduation\n'
+            + '@participation relation Person (const) [1] -- graduatedIn -- [1] Graduation');
+        const fixedFix = await fixesFor(fixed, 'accumulating-end-not-add-only');
+        expect(fixedFix.map(action => action.title)).toEqual(['Mark the end "const"']);
+        expect(applyFirst(fixed, fixedFix)).toContain('[1] (const) Graduation');
+    });
+
+    test('a termination event repair chooses by cardinality', async () => {
+        const variable = await parse('package p\nkind Person\nevent Death\n'
+            + '@termination relation Person (const) [1] -- diedIn -- [0..1] Death');
+        const variableFix = await fixesFor(variable, 'accumulating-end-not-add-only');
+        expect(variableFix.map(action => action.title)).toEqual(['Mark the end "addOnly"']);
+        expect(applyFirst(variable, variableFix)).toContain('[0..1] (addOnly) Death');
+
+        const fixed = await parse('package p\nkind Person\nevent Death\n'
+            + '@termination relation Person (const) [1] -- diedIn -- [1] Death');
+        const fixedFix = await fixesFor(fixed, 'accumulating-end-not-add-only');
+        expect(fixedFix.map(action => action.title)).toEqual(['Mark the end "const"']);
+        expect(applyFirst(fixed, fixedFix)).toContain('[1] (const) Death');
+    });
 });
 
 describe('a relator that binds only one individual', () => {
@@ -4291,13 +4319,15 @@ describe('source actions, which answer for the file rather than a diagnostic', (
             const outside = [
                 'package p',
                 'kind Person {',
-                '    @participation (const) [2..*] -- participatedIn -- [*] Meeting inverseOf joinedByParticipant',
+                '    @participation (const) [2..*] -- participatedIn -- [*] (addOnly) Meeting inverseOf joinedByParticipant',
                 '}',
-                'relation Meeting [*] -- joinedByParticipant -- [2..*] (const) Person',
+                'relation Meeting (addOnly) [*] -- joinedByParticipant -- [2..*] (const) Person',
                 'event Meeting'
             ].join('\n');
-            const { document, actions } = await actionsFor(outside, undefined, { line: 4, character: 30 });
-            const text = applied(document, actions.find(a => a.title === 'Write this inside "Meeting"')!);
+            const { document, actions } = await actionsFor(outside, undefined, { line: 4, character: 45 });
+            const internalize = actions.find(a => a.title === 'Write this inside "Meeting"');
+            expect(actions.map(action => action.title)).toContain('Write this inside "Meeting"');
+            const text = applied(document, internalize!);
             expect(text).toContain('inverseOf Meeting.joinedByParticipant');
             expect(await new TontoSession().validateText(text)).toEqual([]);
         });
@@ -4817,10 +4847,10 @@ describe('rename, where references are qualified', () => {
     const model = [
         'package p',
         'kind Person {',
-        '    @participation (const) [2..*] -- participatedIn -- [*] Meeting inverseOf Meeting.joinedByParticipant',
+        '    @participation (const) [2..*] -- participatedIn -- [*] (addOnly) Meeting inverseOf Meeting.joinedByParticipant',
         '}',
         'event Meeting {',
-        '    [*] -- joinedByParticipant -- [2..*] (const) Person',
+        '    (addOnly) [*] -- joinedByParticipant -- [2..*] (const) Person',
         '}',
         'historicalRole Attendee specializes Person derivedFrom Person.participatedIn'
     ].join('\n');

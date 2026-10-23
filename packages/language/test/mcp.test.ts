@@ -200,6 +200,23 @@ describe('the MCP server', () => {
         }
     }, 30_000);
 
+    test('starts an ontology and adds a package to it, in its workspace', async () => {
+        const workspace = mkdtempSync(join(tmpdir(), 'tonto-mcp-new-'));
+        const client = await connected(workspace);
+        try {
+            const started = await client.tool('tonto_new', { ontology: 'shop' });
+            expect(started.isError, started.text).toBe(false);
+            expect(readFileSync(join(workspace, 'shop.tonto'), 'utf8')).toContain('ontology shop');
+            const added = await client.tool('tonto_new', { ontology: 'shop', package: 'sales', folder: 'parts' });
+            expect(added.isError, added.text).toBe(false);
+            expect(readFileSync(join(workspace, 'parts', 'sales.tonto'), 'utf8')).toBe('package sales in shop\n\n');
+            expect((await client.tool('tonto_validate', { paths: ['.'] })).text).toBe('No diagnostics. The model is valid.');
+            expect((await client.tool('tonto_new', { ontology: 'other', folder: '../outside' })).isError).toBe(true);
+        } finally {
+            client.stop();
+        }
+    }, 30_000);
+
     test('file paths cannot read outside the workspace', async () => {
         const workspace = mkdtempSync(join(tmpdir(), 'tonto-mcp-paths-'));
         const outside = `${workspace}-outside.tonto`;

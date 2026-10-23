@@ -83,4 +83,20 @@ describe('the tools agents call, defined once for every host', () => {
         const formatted = await runTool('tonto_format', { source: 'ontology shop\n/// ```\nkind Person' }, hostFor());
         expect(formatted.text.startsWith('````tonto\n')).toBe(true);
     });
+
+    test('start an ontology and add a package to it, inside the workspace only', async () => {
+        const workspace = realpathSync(mkdtempSync(join(tmpdir(), 'tonto-tool-new-')));
+        const host = hostFor(workspace);
+        const started = await runTool('tonto_new', { ontology: 'shop' }, host);
+        expect(started).toMatchObject({ text: 'Wrote shop.tonto, the one-file ontology "shop". It starts with a sample class, as a workspace\'s first ontology does.' });
+        const added = await runTool('tonto_new', { ontology: 'shop', package: 'sales', folder: 'sales' }, host);
+        expect(added.isError).toBeUndefined();
+        expect(added.text).toBe('"shop" was a one-file ontology: its declarations are now package "core", in core.tonto.\n'
+            + 'Wrote sales/sales.tonto, package "sales" of "shop", bundled in shop.tonto.');
+        expect((await runTool('tonto_validate', { paths: ['.'] }, host)).text).toBe('No diagnostics. The model is valid.');
+        expect(await runTool('tonto_new', { ontology: 'other', folder: '../outside' }, host)).toMatchObject({ isError: true, text: expect.stringMatching(/outside the workspace/) });
+        expect(await runTool('tonto_new', { ontology: 'other', folder: '/tmp' }, host)).toMatchObject({ isError: true, text: expect.stringMatching(/relative to the workspace/) });
+        expect(await runTool('tonto_new', { ontology: 'shop' }, host)).toMatchObject({ isError: true, text: expect.stringMatching(/already has an ontology "shop"/) });
+        expect(await runTool('tonto_new', { ontology: 'shop' }, hostFor())).toMatchObject({ isError: true, text: 'No workspace.' });
+    });
 });

@@ -18,6 +18,14 @@ pattern when one is relevant. Use `tonto_explain` to settle a stereotype or
 specialization question without drafting a model. Use `tonto_complete` at an
 unfinished position when admissible values are unclear.
 
+### Start and grow an ontology
+
+Use `tonto_new` to start an ontology, written as a one-file ontology, or to
+add a package to one: it writes the package file and its bundle entry,
+splitting a one-file ontology first. `tonto_split` splits one without adding a
+package. Use these instead of writing ontology headers, package declarations,
+or bundle entries by hand.
+
 ### Check the whole workspace
 
 Before editing, read the target `.tonto` file, its ontology header or package
@@ -131,6 +139,8 @@ do not describe the model as valid.
   Naming a code with `--fix=<code>` makes that choice, so do so only when the
   intended modeling decision is clear. Preserve a before/after copy and review
   every changed file before accepting the result.
+- Start an ontology with `tonto new ontology <name>`, and add a package with
+  `tonto new package <name> --in=<ontology>`, rather than by hand.
 - Run `tonto format <file>` and save its formatted output before handing back
   model changes. Use `tonto ontologies <workspace-root>` to inspect authored
   ontologies and `tonto ast <file>` for structural questions.

@@ -74,7 +74,7 @@ ontology conference
 import people from <https://example.org/people.tonto>
 
 event Conference
-@participation relation people.Person (const participants) [0..*] -- attended -- [0..*] Conference
+@participation relation people.Person (const participants) [0..*] -- attended -- [0..*] (addOnly) Conference
 ```
 
 `people.Person` refers to `Person` in the imported `people` ontology. Replace
@@ -98,7 +98,7 @@ The gUFO export checks the ontology and writes `people.ttl` beside its ontology 
 
 ## Command line and agents
 
-The VS Code extension is enough for ordinary modeling. After the first npm release, the standalone CLI will require Node.js 22 or later. Install it globally for a shell-wide `tonto` command, or locally to pin its version to a project:
+The VS Code extension is enough for ordinary modeling. The standalone CLI requires Node.js 22 or later. Install it globally for a shell-wide `tonto` command, or locally to pin its version to a project:
 
 ```sh
 # Global installation
@@ -113,16 +113,7 @@ npx tonto check people.tonto --json
 
 `check` reports each problem with a stable code, position, and available edits. `npx tonto check people.tonto --fix` applies repairs the rule forces; ambiguous modeling choices remain yours. `gufo --write` writes each checked ontology's Turtle beside its ontology file. See the [CLI package guide](packages/language/README.md) and [modeling instructions](AGENTS.md#writing-tonto) for install, workspace, stdin, and selective repair options. In a source checkout, invoke the local binary as `./node_modules/.bin/tonto`.
 
-Until that release is published, build this checkout and invoke the workspace
-binary directly:
-
-```sh
-npm install
-npm run build
-./node_modules/.bin/tonto guide
-```
-
-The extension also exposes the language guide, validation, repairs, patterns, and export as tools to VS Code agents. **Tonto: Set Up Codex and Claude in Workspace** configures the bundled MCP server and project instructions for those agents. The [installation guide](docs/installation.md) explains setup and use.
+The extension also exposes the language guide, validation, repairs, patterns, and export as tools to VS Code agents. **Tonto: Set Up Codex and Claude in Workspace** configures the bundled MCP server and project instructions for those agents. Without the editor, `tonto init` sets a folder up for Codex and Claude Code with the CLI, and `tonto new ontology <name>` and `tonto new package <name>` start ontologies and packages. The [installation guide](docs/installation.md) explains setup and use.
 
 ## For contributors
 

@@ -28,7 +28,7 @@ const repository = fileURLToPath(new URL('../../../', import.meta.url));
 const files = [
     'README.md', 'AGENTS.md', 'packages/language/src/cli/guide.ts',
     ...readdirSync(join(repository, 'docs')).filter(name => name.endsWith('.md') && name !== 'ontology-publication-stages.md').map(name => `docs/${name}`),
-    'packages/extension/templates/agent-instructions.md',
+    'packages/extension/templates/agent-instructions.md', 'packages/language/templates/agent-instructions.md',
     ...readdirSync(join(repository, 'packages/extension/media/walkthrough')).map(name => `packages/extension/media/walkthrough/${name}`),
     ...['handout-page', 'publication-page', 'rules-page'].flatMap(page => readdirSync(join(repository, 'packages/language/tools', page))
         .filter(name => /\.(mjs|md)$/.test(name) || name === 'template.html').map(name => `packages/language/tools/${page}/${name}`))
@@ -56,7 +56,7 @@ describe('the vocabulary of ontologies, packages and files', () => {
 const BRITISH = /(?<![@\w])(model(l(ing|ed|er|ers))|catalogu(e|es|ed)|colour|behaviour|neighbour|favour|enrolment|labelled|cancelled|licence|judgement|organis(e|ed|es|ing|ation|ations)|recognis(e|ed|es|ing)|normalis(e|ed|es|ing|ation)|capitalis(e|ed|es|ing|ation))(?!\w)/i;
 
 const SPELLED = ['README.md', 'AGENTS.md', 'docs', 'evals', 'packages/language/src', 'packages/language/test',
-    'packages/language/tools', 'packages/mcp/src', 'packages/extension/src',
+    'packages/language/tools', 'packages/language/templates', 'packages/mcp/src', 'packages/extension/src',
     'packages/extension/templates', 'packages/extension/media', 'packages/extension/package.json'];
 
 function textFiles(path: string): string[] {

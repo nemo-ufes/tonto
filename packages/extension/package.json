@@ -536,6 +536,34 @@
                 }
             },
             {
+                "name": "tonto_new",
+                "displayName": "Start an ontology, or add a package",
+                "toolReferenceName": "tontoNew",
+                "canBeReferencedInPrompt": true,
+                "userDescription": "Start an ontology, or add a package",
+                "modelDescription": "Use to start an ontology or add a package to one, instead of writing headers and bundle entries by hand. Without package, writes <ontology>.tonto, a one-file ontology (a workspace's first has a sample class); with package, writes its package file and bundle entry, splitting a one-file ontology first. Never replaces a file.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "ontology": {
+                            "type": "string",
+                            "description": "The new ontology's name, or the ontology the package joins."
+                        },
+                        "package": {
+                            "type": "string",
+                            "description": "A package to add to it, e.g. \"sales\"."
+                        },
+                        "folder": {
+                            "type": "string",
+                            "description": "Workspace-relative folder for the file; by default the root, or for a package its ontology file's."
+                        }
+                    },
+                    "required": [
+                        "ontology"
+                    ]
+                }
+            },
+            {
                 "name": "tonto_split",
                 "displayName": "Split a one-file ontology",
                 "toolReferenceName": "tontoSplit",

@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { basename, delimiter, dirname, join, relative, resolve } from 'node:path';
 import { collectFiles, workspaceRootOf, TontoSession } from '../api.js';
 import { writeBeside } from '../exports.js';
 import type { GufoDiagnostic, GufoResult } from '../gufo.js';
@@ -477,6 +477,146 @@ async function splitOntology(paths: string[], workspace?: string, json = false):
     }
 }
 
+/** The nearest directory of a path that exists, which is where workspace discovery can start. */
+function existingAncestor(path: string): string {
+    let existing = path;
+    while (!existsSync(existing) && dirname(existing) !== existing) existing = dirname(existing);
+    return existing;
+}
+
+/**
+ * `tonto new ontology <name> [folder]` and `tonto new package <name> [folder]`:
+ * the editor's New Ontology... and New Package..., written to disk.
+ */
+async function newFile(rest: string[]): Promise<number> {
+    const flags = rest.filter(argument => argument.startsWith('--'));
+    const [what, name, folder, ...extra] = rest.filter(argument => !argument.startsWith('--'));
+    const inFlag = flags.find(flag => flag.startsWith('--in='));
+    const workspaceFlag = flags.find(flag => flag.startsWith('--workspace='));
+    const unknown = flags.filter(flag => flag !== '--json' && flag !== inFlag && flag !== workspaceFlag);
+    if (unknown.length > 0) {
+        process.stderr.write(`unknown option ${unknown.join(', ')}\n`);
+        return 2;
+    }
+    if ((what !== 'ontology' && what !== 'package') || !name || extra.length > 0) {
+        process.stderr.write('usage: tonto new ontology <name> [folder]\n       tonto new package <name> [folder] [--in=<ontology>]\n');
+        return 2;
+    }
+    if (what === 'ontology' && inFlag) {
+        process.stderr.write('--in names the ontology a package joins; a new ontology joins none\n');
+        return 2;
+    }
+    if (inFlag === '--in=' || workspaceFlag === '--workspace=') {
+        process.stderr.write('options --in and --workspace require a value\n');
+        return 2;
+    }
+    const target = resolve(folder ?? '.');
+    // A new ontology's workspace is where it goes; a package's is the one its
+    // ontology is in, which is here -- its folder decides nothing about that,
+    // and taking the workspace from it let a package land outside.
+    const workspace = workspaceFlag ? resolve(workspaceFlag.slice('--workspace='.length))
+        : workspaceRootOf(existingAncestor(what === 'ontology' ? target : process.cwd()));
+    const session = new TontoSession({ workspace: [workspace] });
+    const near = (path: string): string => relative(process.cwd(), path) || path;
+    try {
+        if (what === 'ontology') {
+            // Here, unless told otherwise: the workspace's root may be well above.
+            const result = await session.newOntology(name, target);
+            process.stdout.write(flags.includes('--json') ? JSON.stringify({ ...result, file: near(result.file) }, undefined, 2) + '\n'
+                : `Created ${near(result.file)}, the one-file ontology "${result.ontology}".\n`);
+            return 0;
+        }
+        const result = await session.newPackage(name, { ontology: inFlag?.slice('--in='.length), folder: folder === undefined ? undefined : target });
+        const output = {
+            ...result, packageFile: near(result.packageFile), ontologyFile: near(result.ontologyFile),
+            ...(result.split ? { split: { ...result.split, packageFile: near(result.split.packageFile) } } : {})
+        };
+        process.stdout.write(flags.includes('--json') ? JSON.stringify(output, undefined, 2) + '\n'
+            : (output.split ? `"${result.ontology}" was a one-file ontology: its declarations are now package "${output.split.packageName}", `
+                + `in ${output.split.packageFile}.\n` : '')
+            + `Created ${output.packageFile}, package "${result.packageName}" of "${result.ontology}", bundled in ${output.ontologyFile}.\n`);
+        return 0;
+    } catch (error) {
+        process.stderr.write(`tonto new: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+    }
+}
+
+/** `tonto init [folder]`: the folder set up for agents using the installed CLI. */
+async function init(rest: string[]): Promise<number> {
+    const flags = rest.filter(argument => argument.startsWith('--'));
+    const paths = rest.filter(argument => !argument.startsWith('--'));
+    const ontologyFlag = flags.find(flag => flag.startsWith('--ontology='));
+    const unknown = flags.filter(flag => !['--json', '--no-ontology'].includes(flag) && flag !== ontologyFlag);
+    if (unknown.length > 0) {
+        process.stderr.write(`unknown option ${unknown.join(', ')}\n`);
+        return 2;
+    }
+    if (paths.length > 1 || ontologyFlag === '--ontology=' || (ontologyFlag && flags.includes('--no-ontology'))) {
+        process.stderr.write('usage: tonto init [folder] [--ontology=<name> | --no-ontology]\n');
+        return 2;
+    }
+    const { initWorkspace } = await import('./init.js');
+    let result;
+    try {
+        result = await initWorkspace(paths[0] ?? '.', {
+            ontology: flags.includes('--no-ontology') ? false : ontologyFlag?.slice('--ontology='.length)
+        });
+    } catch (error) {
+        process.stderr.write(`tonto init: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+    }
+    const installed = cliInstalled(result.folder);
+    const near = (path: string): string => relative(process.cwd(), path) || '.';
+    if (flags.includes('--json')) {
+        process.stdout.write(JSON.stringify({
+            ...result, folder: near(result.folder),
+            ...(result.ontology ? { ontology: { ...result.ontology, file: near(result.ontology.file) } } : {}),
+            cliInstalled: installed
+        }, undefined, 2) + '\n');
+        return 0;
+    }
+    const lines = [
+        result.ontology ? `Created ${near(result.ontology.file)}, the one-file ontology "${result.ontology.ontology}".` : '',
+        result.changed.length ? `Wrote ${result.changed.join(', ')}.` : '',
+        result.kept.length ? `Kept ${result.kept.join(', ')}: the editor's setup is there already.` : '',
+        result.changed.length === 0 ? 'Nothing to change: the folder is set up already.'
+            : 'Codex and Claude Code read AGENTS.md'
+                + (result.changed.includes('.claude/settings.json') ? ', and Claude Code checks each .tonto file it edits with `tonto hook`' : '')
+                + '. Start a new agent session to load the setup.',
+        installed ? '' : 'No installed tonto was found for this folder, and the instructions and the hook run '
+            + '`npx --no -- tonto`, which does not download one. Install it with `npm install --global tonto-language`, '
+            + 'or in the project with `npm install --save-dev tonto-language`.'
+    ].filter(Boolean);
+    process.stdout.write(`${lines.join('\n')}\n`);
+    return 0;
+}
+
+/** Whether `npx --no -- tonto` will find a CLI from this folder: on the path, or installed in it or above it. */
+function cliInstalled(folder: string): boolean {
+    const names = process.platform === 'win32' ? ['tonto.cmd', 'tonto.exe', 'tonto'] : ['tonto'];
+    const onPath = (process.env.PATH ?? '').split(delimiter).filter(Boolean);
+    const local: string[] = [];
+    for (let directory = folder; ; directory = dirname(directory)) {
+        local.push(join(directory, 'node_modules', '.bin'));
+        if (dirname(directory) === directory) break;
+    }
+    return [...local, ...onPath].some(directory => names.some(name => existsSync(join(directory, name))));
+}
+
+/** Claude Code's PostToolUse hook, as `tonto init` installs it. */
+async function hook(): Promise<number> {
+    const { runClaudeHook } = await import('../agent-hook.js');
+    try {
+        await runClaudeHook('cli');
+        return 0;
+    } catch (error) {
+        // The hook's failure, not the edit's: said to the user, never blocking Claude.
+        process.stderr.write(`tonto's validation hook failed: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+    }
+}
+
 export async function printGuide(): Promise<number> {
     const { guide } = await import('./guide.js');
     process.stdout.write(guide());
@@ -487,6 +627,27 @@ const USAGE = `tonto -- static analysis for the tonto modeling language
 
   tonto --version             print the installed CLI version
   tonto --help                show this help
+
+  tonto init [folder]        set up a folder for Codex and Claude Code with
+                             this CLI: the instructions in AGENTS.md, CLAUDE.md
+                             importing them, and Claude Code's hook checking
+                             each edited .tonto file; and, in a folder with no
+                             model yet, a one-file ontology named after it
+    --ontology=<name>        the ontology to start, whatever the folder holds
+    --no-ontology            start none
+    --json                   report what was written
+  tonto new ontology <name> [folder]
+                             write <name>.tonto, a one-file ontology; the
+                             workspace's first starts with a sample class
+  tonto new package <name> [folder]
+                             write a package file and its bundle entry, beside
+                             the ontology file unless a folder is given; a
+                             one-file ontology is split first
+    --in=<ontology>          the ontology it joins, where there are several
+    --workspace=<dir>        load this directory as the workspace
+    --json                   report the files written
+  tonto hook                 Claude Code's PostToolUse hook, as init installs
+                             it: reads the event on stdin
 
   tonto fetch [paths...]     explicitly retrieve missing remote dependencies
     --refresh                atomically refresh the full retrieval closure
@@ -670,6 +831,15 @@ async function dispatch(argv: string[]): Promise<number> {
     }
     if (command === 'ontologies') {
         return ontologies(rest.filter(argument => !argument.startsWith('--')), rest.includes('--json'));
+    }
+    if (command === 'new') {
+        return newFile(rest);
+    }
+    if (command === 'init') {
+        return init(rest);
+    }
+    if (command === 'hook') {
+        return hook();
     }
     if (command === 'split') {
         const flags = rest.filter(argument => argument.startsWith('--'));

@@ -268,11 +268,14 @@ the past: \`Person -- delivered -- KeynoteSpeech\` or
 \`participatesIn\`. A participation in a \`process\` may use the present when the
 process may still be unfolding: \`Baker -- performs -- Baking\`.
 
-A link to a completed event remains part of the participant's history. Its
-source should be a rigid type such as \`Person\`: a \`Student\` may cease to be
-one while still being the person who graduated. The temporal role held at the
-event is a separate claim. \`historical-event-source-can-lapse\` warns when a
-lasting event link instead starts at a type whose membership can end.
+A link to a completed event remains part of the participant's history. A
+termination event remains in the endurant's history too. Its event end is \`addOnly\`, so it cannot be removed; use \`const\` when the
+event links are fixed by the domain. A fixed cardinality calls
+for \`const\`, since \`addOnly\` has nothing to add. Its source should be a
+rigid type such as \`Person\`: a \`Student\` may cease to be one while still
+being the person who graduated. The temporal role held at the event is a
+separate claim. \`historical-event-source-can-lapse\` warns when a lasting
+event link instead starts at a type whose membership can end.
 
 ${RELATION_STEREOTYPES.map(s => `  @${s.padEnd(20)} ${signatureOf(s)}`).join('\n')}
 
