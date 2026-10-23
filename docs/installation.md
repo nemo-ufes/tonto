@@ -2,12 +2,13 @@
 
 [English](#english) · [Português do Brasil](#português-do-brasil)
 
-This guide is for people receiving tonto as a private VSIX file. tonto does
-not need to be published in the Visual Studio Marketplace or npm registry.
+Install tonto from the Visual Studio Marketplace, or use the VSIX option if
+you have been given an extension package. The standalone command-line tool is
+distributed separately through npm.
 
-Este guia destina-se a quem recebe o tonto como um arquivo VSIX privado. O
-tonto não precisa estar publicado no Visual Studio Marketplace nem no registro
-npm.
+Instale o tonto pelo Visual Studio Marketplace ou use a opção VSIX se você
+recebeu um pacote da extensão. A ferramenta de linha de comando é distribuída
+separadamente pelo npm.
 
 ---
 
@@ -16,27 +17,34 @@ npm.
 ### What you need
 
 - Desktop [Visual Studio Code](https://code.visualstudio.com/) 1.95 or later.
-- The file `tonto-VERSION.vsix` supplied by the tonto distributor.
 
 That is the complete installation for editing models and for using tonto with
 Codex, Claude Code, or agents that support VS Code's language-model tool API.
 You do **not** need to install Node.js, npm, the tonto command line, or a
 separate MCP server.
 
-VS Code runs the extension with its own internal Node.js runtime. The VSIX
-contains the tonto parser, validator, formatter, repair engine, and gUFO/OWL
-mapping.
+VS Code runs the extension with its own internal Node.js runtime. The
+extension contains the tonto parser, validator, formatter, repair engine, and
+gUFO/OWL mapping.
 
 ### 1. Install the extension
 
-In VS Code:
+#### From the Visual Studio Marketplace
+
+In VS Code, open the **Extensions** view, search for **tonto**, and install
+the extension published by **nemo-ufes**. You can also open the [tonto
+Marketplace listing](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-vscode)
+and select **Install**. Reload VS Code if requested.
+
+#### From a VSIX file
+
+If you have a `tonto-VERSION.vsix` file, in VS Code:
 
 1. Open the **Extensions** view.
 2. Open the **Views and More Actions** (`...`) menu.
 3. Select **Install from VSIX...**.
 4. Select `tonto-VERSION.vsix`.
-5. Confirm that you trust the person or organization that supplied it.
-6. Reload VS Code if requested.
+5. Reload VS Code if requested.
 
 After installation, VS Code automatically opens **Get started with tonto**.
 The walkthrough can create a valid one-file ontology, open the language guide,
@@ -67,16 +75,24 @@ See the [CLI package guide](../packages/language/README.md) for the one-time
 `npx --package` form and upgrade instructions. The extension's agent setup
 continues to use its bundled MCP server independently of this CLI install.
 
-If the `code` command is available, the equivalent command is:
+For a VSIX file, if the `code` command is available, the equivalent command
+is:
 
 ```sh
 code --install-extension ./tonto-VERSION.vsix
 ```
 
-A privately installed VSIX does not normally update itself. Install the newer
-VSIX when the distributor provides one. When tonto next activates, it also
-refreshes the bundled MCP runtime used by existing Codex and Claude project
-configurations; start a new agent chat to load newly added tools or parameters.
+To install from the Marketplace with the `code` command, use:
+
+```sh
+code --install-extension nemo-ufes.tonto-vscode
+```
+
+Marketplace installations receive updates through VS Code according to its
+extension update settings. For a VSIX installation, install a newer VSIX when
+one is provided. When tonto next activates, it also refreshes the bundled MCP
+runtime used by existing Codex and Claude project configurations; start a new
+agent chat to load newly added tools or parameters.
 
 ### 2. Open a tonto project
 
@@ -297,27 +313,34 @@ afterward.
 
 - [Visual Studio Code](https://code.visualstudio.com/) para desktop, versão
   1.95 ou posterior.
-- O arquivo `tonto-VERSAO.vsix` fornecido pelo distribuidor do tonto.
 
 Essa é a instalação completa para editar modelos e utilizar o tonto com o
 Codex, o Claude Code ou agentes compatíveis com a API de ferramentas de
 modelos de linguagem do VS Code. **Não** é necessário instalar Node.js, npm, a
 linha de comando do tonto ou um servidor MCP separado.
 
-O VS Code executa a extensão com sua própria versão interna do Node.js. O VSIX
-contém o analisador sintático, o validador, o formatador, o mecanismo de
-correções e o mapeamento para gUFO/OWL.
+O VS Code executa a extensão com sua própria versão interna do Node.js. A
+extensão contém o analisador sintático, o validador, o formatador, o mecanismo
+de correções e o mapeamento para gUFO/OWL.
 
 ### 1. Instale a extensão
 
-No VS Code:
+#### Pelo Visual Studio Marketplace
+
+No VS Code, abra a visão **Extensões**, pesquise por **tonto** e instale a
+extensão publicada por **nemo-ufes**. Você também pode abrir a [página do tonto
+no Marketplace](https://marketplace.visualstudio.com/items?itemName=nemo-ufes.tonto-vscode)
+e selecionar **Install**. Recarregue o VS Code, caso isso seja solicitado.
+
+#### Por um arquivo VSIX
+
+Se você tem um arquivo `tonto-VERSAO.vsix`, no VS Code:
 
 1. Abra a visão **Extensões**.
 2. Abra o menu **Exibições e Mais Ações** (`...`).
 3. Selecione **Instalar a partir do VSIX...**.
 4. Selecione `tonto-VERSAO.vsix`.
-5. Confirme que você confia na pessoa ou organização que forneceu o arquivo.
-6. Recarregue o VS Code, caso isso seja solicitado.
+5. Recarregue o VS Code, caso isso seja solicitado.
 
 Depois da instalação, o VS Code abre automaticamente **Get started with
 tonto**. O roteiro pode criar um modelo inicial válido, abrir o guia da
@@ -325,15 +348,22 @@ linguagem, mostrar os diagnósticos de validação, exportar o modelo e apresent
 as ferramentas para agentes. Para abri-lo novamente, execute **Tonto: Get
 Started** pela Paleta de Comandos.
 
-Se o comando `code` estiver disponível, o comando equivalente é:
+Para instalar um arquivo VSIX, se o comando `code` estiver disponível, use:
 
 ```sh
 code --install-extension ./tonto-VERSAO.vsix
 ```
 
-Um VSIX instalado de forma privada normalmente não é atualizado
-automaticamente. Instale o novo VSIX quando o distribuidor disponibilizá-lo.
-Na próxima ativação do tonto, a extensão também atualiza o runtime MCP usado
+Para instalar pelo Marketplace com o comando `code`, use:
+
+```sh
+code --install-extension nemo-ufes.tonto-vscode
+```
+
+As instalações pelo Marketplace recebem atualizações pelo VS Code, conforme
+as configurações de atualização de extensões. Para uma instalação por VSIX,
+instale um arquivo VSIX mais recente quando ele for disponibilizado. Na
+próxima ativação do tonto, a extensão também atualiza o runtime MCP usado
 pelas configurações existentes do Codex e do Claude; inicie uma nova conversa
 com o agente para carregar novas ferramentas ou parâmetros.
 
