@@ -17,6 +17,7 @@
     "types": "out/index.d.ts",
     "exports": {
         ".": "./out/index.js",
+        "./core": "./out/core.js",
         "./guide": "./out/cli/guide.js",
         "./rules": "./out/cli/rules.js",
         "./patterns": "./out/cli/patterns.js",

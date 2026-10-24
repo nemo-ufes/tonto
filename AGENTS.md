@@ -554,6 +554,11 @@ Breaking one of these fails a test rather than silently changing behavior.
   extension build writes `out/THIRD-PARTY-NOTICES.txt` from what esbuild
   bundled, and stops on a bundled package whose license is missing or not on
   the list in `packages/extension/third-party-notices.mjs`.
+- **`tonto-language/core` gains no Node module.** It and `/patterns` are
+  loaded by hosts without Node, such as an editor in a browser page.
+  `test/core-entry.test.ts` lists each Node import they reach today and fails
+  on a new one; put Node-only work behind the CLI (`api.ts`, `exports.ts`,
+  `cli/`) instead.
 - **Every word-shaped keyword is usable as a name somewhere**, or the grammar
   test fails — that is how `of` came to be unwritable as an end name.
 - **The guide's sample model validates.** Documentation that does not parse is

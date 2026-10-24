@@ -224,7 +224,9 @@ export class PublicationWorkspace {
             }
             // What the caller supplies applies to every root, over each one's own.
             const supplied = options.locations ?? {};
-            if (this.roots.length === 0) this.addMappings(this.mappingsOf(undefined), supplied, process.cwd(), 'The supplied locations');
+            // A host with no workspace root may have no `process` either: an
+            // editor in a browser checks one document and supplies no locations.
+            if (this.roots.length === 0) this.addMappings(this.mappingsOf(undefined), supplied, globalThis.process?.cwd() ?? '/', 'The supplied locations');
             for (const root of this.roots) this.addMappings(this.mappings.get(root)!, supplied, this.roots[0]!, 'The supplied locations');
         }
         this.snapshots = new Map();
