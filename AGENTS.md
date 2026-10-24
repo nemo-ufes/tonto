@@ -429,6 +429,7 @@ which is whether the edit was a step backwards.
     npm run dev:link-cli           # build and link the CLI globally
     npm run dev:unlink-cli         # remove the global CLI link and local version marker
     npm run release:prepare -- 0.2.0 # synchronize release versions; does not publish
+    npm run release -- 0.2.0       # commit, tag, push and dispatch the release workflow
 
 CI runs build, test and lint on Linux, Windows and macOS, the VS Code tests
 on Linux under xvfb, and the conformance check with ROBOT; it also packages
@@ -450,18 +451,18 @@ Claude Code, a new Codex session): reloading does not stop one. Set
 `VSCODE_USER_DATA_DIR` and `VSCODE_EXTENSIONS_DIR` to install into isolated
 directories; set `TONTO_VSCODE_CLI` for another launcher.
 
-Prepare a version, review and commit it, then create and push a signed,
-annotated `v<version>` tag. Pushing the tag does not start a release;
-`.github/workflows/release.yml` runs only when manually dispatched from GitHub
-Actions with that tag selected. It verifies the configured signer and version
-agreement, builds the CLI `.tgz` and extension VSIX, and attaches both to the
-GitHub Release. npm and Marketplace publishing are separate options and off by
-default. They require their respective trusted publishing configuration only
-when selected. A GitHub-only release still requires the
+Run `npm run release -- <version>` from a clean `main` branch synchronized
+with `origin/main`. It prepares and commits the coordinated version change,
+creates a signed annotated `v<version>` tag, pushes the branch and tag, and
+dispatches `.github/workflows/release.yml`. Pushing the tag does not start a
+release by itself. npm and Marketplace publishing are separate options and off
+by default; select them with `--publish-npm` and `--publish-marketplace`.
+They require their respective trusted publishing configuration only when
+selected. A GitHub-only release still requires the
 `RELEASE_SIGNING_PUBLIC_KEY` secret and `RELEASE_SIGNING_FINGERPRINT`
 variable. See
 [`docs/development.md`](docs/development.md#local-installation-and-releases)
-for the complete workflow.
+for the complete workflow and recovery notes.
 
 ### Layout
 

@@ -139,37 +139,37 @@ with `npm install --global tonto-language` if desired.
 
 ### Prepare and publish a release
 
-The developer communicates release intent by selecting a version, reviewing
-the coordinated version change, and manually dispatching the `Release tonto`
-workflow. Pushing a tag does not start a release. The workflow's npm and
-Marketplace publication options default to off, so a GitHub-only release does
-not require either registry to be configured.
+Use the release command from a clean `main` branch synchronized with
+`origin/main`. It prepares the coordinated version change, commits it, creates
+a signed annotated tag, pushes the branch and tag, then dispatches the
+`Release tonto` workflow. Pushing a tag by itself does not start a release.
 
-1. Choose the SemVer release, for example `0.2.0`.
-2. Run `npm run release:prepare -- 0.2.0`. It sets the
-   canonical version in `packages/language/package.json` and synchronizes
-   the CLI, extension, bundled MCP, their exact workspace dependencies, and
-   the lockfile. It verifies consistency but does not publish anything;
-   tagged-release CI runs the build and release checks.
-3. Review and commit the version changes and release-ready source.
-4. Create a signed, annotated tag at that commit and push it. Check first that
-   the commit being tagged carries the version, since the workflow refuses a
-   tag that does not match:
+```sh
+npm run release -- 0.10.0 --dry-run
+npm run release -- 0.10.0
+```
 
-   ```sh
-   git status --short                   # nothing left uncommitted
-   npm run versions:check -- v0.2.0
-   git tag -s v0.2.0 -m "Release v0.2.0"
-   git push origin v0.2.0
-   ```
+The command requires confirmation before changing the repository. Add `--yes`
+to skip the prompt in an intentional non-interactive run. npm and Marketplace
+publishing are opt-in; for example, add `--publish-npm` to publish
+`tonto-language` to npm, and `--publish-marketplace` to publish the VS Code
+extension. Both may be selected for the same release. Without either flag, the
+workflow creates the GitHub Release and attaches the CLI `.tgz` and extension
+`.vsix` without publishing to registries.
 
-   Pushing the tag does not run the release workflow.
-5. In GitHub Actions, select `Release tonto` and choose **Run workflow**.
-   Enter the tag (for example, `v0.9.0`) and leave **Publish CLI package to
-   npm** and **Publish extension to the VS Code Marketplace** unchecked for a
-   GitHub-only release. The workflow verifies the signed tag and package
-   versions, builds and checks the tagged commit, packages the CLI `.tgz` and
-   extension `.vsix`, and attaches both to the GitHub Release.
+The command checks the working tree, branch, `origin/main`, version, local and
+remote tag availability, GitHub CLI authentication, and version consistency
+before preparing. Each operation stops the sequence on error. If an error
+occurs after the version commit or tag was created, inspect Git and GitHub
+state before continuing; do not rerun blindly. A workflow dispatch failure
+after the tag is pushed can be recovered by manually dispatching `Release
+tonto` for that tag.
+
+The workflow verifies the signed tag and package versions, builds and checks
+the tagged commit, packages both artifacts, publishes the selected registries,
+and attaches the `.tgz` and `.vsix` to the GitHub Release. npm publication uses
+GitHub Actions provenance and skips an existing package version only when its
+integrity matches the artifact being published.
 
 The signed tag identifies the release source; the GitHub Release is the
 download page. The workflow requires the `RELEASE_SIGNING_PUBLIC_KEY` secret

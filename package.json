@@ -9,6 +9,7 @@
         "langium:generate": "npm run langium:generate --workspace=tonto-language",
         "versions:check": "node scripts/versioning.mjs check",
         "release:prepare": "node scripts/versioning.mjs prepare",
+        "release": "node scripts/release.mjs",
         "build": "npm run langium:generate && npm run build --workspace=tonto-language && npm run build --workspace=tonto-mcp && npm run build --workspace=tonto-vscode",
         "package": "npm run build && npm run package --workspace=tonto-vscode",
         "dev:install": "node scripts/dev-install.mjs",
