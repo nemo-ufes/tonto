@@ -2,7 +2,7 @@ import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { CLI_HOOK_COMMAND, claudeHookAnswer, hasClaudeHook, withClaudeHook } from '../src/agent-hook.js';
+import { CLI_HOOK_COMMAND, claudeHookAnswer, hasClaudeHook, hasEditorClaudeHook, withClaudeHook } from '../src/agent-hook.js';
 
 /** A project with one file, and the event Claude Code sends after editing it. */
 function edited(source: string, tool = 'Edit', name = 'shop.tonto'): { event: unknown; project: string } {
@@ -65,6 +65,17 @@ describe('the Claude Code hook that validates each edit', () => {
         expect(hasClaudeHook(editor, CLI_HOOK_COMMAND)).toBe(false);
         expect((withClaudeHook(editor, CLI_HOOK_COMMAND).hooks as { PostToolUse: unknown[] }).PostToolUse).toHaveLength(1);
         expect(hasClaudeHook({ hooks: { PostToolUse: [{ hooks: [{ command: 'echo tonto' }] }] } })).toBe(false);
+    });
+
+    test('replaces only its own hook in an entry, keeping another written beside it', () => {
+        const theirs = { type: 'command', command: 'prettier --write "$FILE"' };
+        const shared = { hooks: { PostToolUse: [{ matcher: 'Edit|Write', hooks: [theirs, { type: 'command', command: CLI_HOOK_COMMAND }] }] } };
+        expect(withClaudeHook(shared, 'node /staged/tonto-hook.mjs').hooks).toEqual({ PostToolUse: [
+            { matcher: 'Edit|Write', hooks: [theirs] },
+            { matcher: 'Edit|MultiEdit|Write', hooks: [{ type: 'command', command: 'node /staged/tonto-hook.mjs', timeout: 60 }] }
+        ] });
+        expect(hasEditorClaudeHook(shared)).toBe(false);
+        expect(hasEditorClaudeHook(withClaudeHook(shared, 'node /staged/tonto-hook.mjs'))).toBe(true);
     });
 
     test('names the CLI rather than the tools, where the folder was set up for the CLI', async () => {

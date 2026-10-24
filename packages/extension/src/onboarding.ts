@@ -4,6 +4,7 @@ import type { ExtensionContext, TextDocumentContentProvider, Uri, WorkspaceFolde
 import * as vscode from 'vscode';
 import type { LanguageClient } from 'vscode-languageclient/node';
 import { withClaudeHook } from 'tonto-language/agent-hook';
+import { ontologyNameProblem } from 'tonto-language';
 import {
     AGENTS_IMPORT, EDITOR_INSTRUCTIONS_START, ONTOLOGY_NAME_HINT, defaultOntologyName, starterOntology, validOntologyName,
     withAgentsImport, withTontoInstructions
@@ -63,11 +64,14 @@ export async function newOntology(context: ExtensionContext, client: LanguageCli
     const ontologyName = await vscode.window.showInputBox({
         title: 'New tonto ontology',
         prompt: 'Name of the ontology',
-        value: existing.length ? '' : defaultOntologyName(folder.uri.fsPath),
+        value: existing.length ? '' : defaultOntologyName(folder.uri.fsPath, name => !ontologyNameProblem(name)),
         ignoreFocusOut: true,
+        // The header is read as well as the name's shape: a keyword such as
+        // "event" has the shape and would write a file that does not parse.
         validateInput: value => !validOntologyName(value)
             ? ONTOLOGY_NAME_HINT
-            : existing.includes(value) ? `This workspace already has an ontology "${value}".` : undefined
+            : ontologyNameProblem(value)
+                ?? (existing.includes(value) ? `This workspace already has an ontology "${value}".` : undefined)
     });
     if (!ontologyName) return;
 

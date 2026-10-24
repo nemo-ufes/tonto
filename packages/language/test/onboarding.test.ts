@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { TontoSession } from '../src/api.js';
+import { TontoSession, ontologyNameProblem } from '../src/api.js';
 import { CLI_HOOK_COMMAND } from '../src/agent-hook.js';
 import { run } from '../src/cli/index.js';
 import { cliInstructions } from '../src/cli/init.js';
@@ -50,6 +50,14 @@ describe('what starting a workspace writes', () => {
         expect(defaultOntologyName('/models/Ação')).toBe('acao');
         expect(defaultOntologyName('/models/2026')).toBe('model_2026');
         expect(defaultOntologyName('/models/---')).toBe('model');
+        // A keyword has the shape of a name, and a header written with it does not parse.
+        const reads = (name: string): boolean => !ontologyNameProblem(name);
+        expect(defaultOntologyName('/models/Ontology', reads)).toBe('model_ontology');
+        expect(defaultOntologyName('/models/event', reads)).toBe('model_event');
+        expect(defaultOntologyName('/models/shop', reads)).toBe('shop');
+        expect(ontologyNameProblem('event')).toMatch(/cannot be an ontology's name/);
+        expect(ontologyNameProblem('Shop')).toMatch(/not an ontology name/);
+        expect(ontologyNameProblem('in')).toBeUndefined();
     });
 
     test('instructions added once, brought up to date in place, and the editor\'s preferred to the command line\'s', () => {
@@ -186,6 +194,25 @@ describe('tonto new and tonto init', () => {
         expect(readFileSync(join(project, 'AGENTS.md'), 'utf8')).toBe(agents);
         expect(readFileSync(join(project, 'CLAUDE.md'), 'utf8')).toBe('Read me.\n\n@AGENTS.md\n');
         expect(JSON.parse(readFileSync(join(project, '.claude', 'settings.json'), 'utf8'))).toEqual(settings);
+    });
+
+    test('tonto init in a folder named after a keyword names its ontology otherwise', async () => {
+        const project = join(folder(), 'ontology');
+        const result = await tonto('init', project, '--json');
+        expect(result.code, result.err).toBe(0);
+        expect(JSON.parse(result.out)).toMatchObject({ ontology: { ontology: 'model_ontology', sample: true } });
+        expect(await errorsIn(project)).toEqual([]);
+    });
+
+    test('tonto init brings an older command line hook up to date, rather than keeping it as the editor\'s', async () => {
+        const project = folder();
+        mkdirSync(join(project, '.claude'));
+        writeFileSync(join(project, '.claude', 'settings.json'), JSON.stringify({ hooks: { PostToolUse: [{ matcher: 'Edit|Write', hooks: [{ type: 'command', command: 'npx tonto hook' }] }] } }));
+        const result = await tonto('init', project, '--json', '--no-ontology');
+        expect(JSON.parse(result.out)).toMatchObject({ kept: [] });
+        expect(JSON.parse(result.out).changed).toContain('.claude/settings.json');
+        const hooks = JSON.parse(readFileSync(join(project, '.claude', 'settings.json'), 'utf8')).hooks.PostToolUse;
+        expect(hooks.map((entry: { hooks: Array<{ command: string }> }) => entry.hooks.map(hook => hook.command))).toEqual([[CLI_HOOK_COMMAND]]);
     });
 
     test('tonto init stops before writing anything it cannot finish', async () => {

@@ -1,7 +1,7 @@
 export * from './generated/ast.js';
 export { TontoLanguageMetaData } from './generated/module.js';
 export * from './tonto-module.js';
-export { TontoSession, collectFiles, workspaceRootOf, applyEdits } from './api.js';
+export { TontoSession, collectFiles, workspaceRootOf, applyEdits, ontologyNameProblem } from './api.js';
 export { writeBeside, writeInto } from './exports.js';
 export type { ExportedFile, WrittenFile } from './exports.js';
 export type { Reported, SessionOptions, WorkspaceOntology } from './api.js';

@@ -8,7 +8,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { isAstNode } from 'langium';
 import type { TontoDocumentationProvider } from './documentation/tonto-documentation-provider.js';
 import type { LangiumDocument } from 'langium';
-import { AstUtils, DocumentState, URI } from 'langium';
+import { AstUtils, DocumentState, EmptyFileSystem, URI } from 'langium';
 import { NodeFileSystem } from 'langium/node';
 import { createTontoServices } from './tonto-module.js';
 import { claimLines, isBatchSafe } from './lsp/edit-batch.js';
@@ -280,6 +280,24 @@ function fileChanges(edit: WorkspaceEdit, documentOf: (uri: string) => LangiumDo
     return [...files.entries()].map(([uri, file]) => ({
         path: URI.parse(uri).fsPath, content: file.document.getText(), ...(file.created ? { createOnly: true } : { mustExist: true })
     }));
+}
+
+let headerParser: ReturnType<typeof createTontoServices>['Tonto']['parser']['LangiumParser'] | undefined;
+
+/**
+ * What is wrong with a name for a new ontology, or nothing when it will do.
+ * A keyword has the shape of a name, but a header written with it does not
+ * parse -- `ontology event` -- and a file that fails on its first line is
+ * worse than a refusal. So the header is read, by the parser that will read
+ * the file, rather than checked against a list of words that would drift.
+ */
+export function ontologyNameProblem(name: string): string | undefined {
+    if (!validOntologyName(name)) return `"${name}" is not an ontology name. ${ONTOLOGY_NAME_HINT}`;
+    headerParser ??= createTontoServices(EmptyFileSystem).Tonto.parser.LangiumParser;
+    const parsed = headerParser.parse(`ontology ${name}\n`);
+    return parsed.lexerErrors.length > 0 || parsed.parserErrors.length > 0
+        ? `"${name}" cannot be an ontology's name: it is a word of the language, and the header does not read with it.`
+        : undefined;
 }
 
 /** One repair, chosen by name, and what applying it left behind. */
@@ -675,7 +693,8 @@ export class TontoSession {
      */
     async newOntology(name: string, folder?: string): Promise<NewOntologyResult> {
         return this.oneAtATime(async () => {
-            if (!validOntologyName(name)) throw new Error(`"${name}" is not an ontology name. ${ONTOLOGY_NAME_HINT}`);
+            const problem = ontologyNameProblem(name);
+            if (problem) throw new Error(problem);
             const { root, directory } = this.placeIn(folder);
             const known = await this.authored();
             if (known.some(ontology => ontology.name === name)) throw new Error(`The workspace already has an ontology "${name}".`);
@@ -683,12 +702,6 @@ export class TontoSession {
             if (existsSync(file)) throw new Error(`${relative(root, file).split(sep).join('/')} already exists.`);
             const sample = known.length === 0;
             const content = starterOntology(name, sample);
-            // A name the lexer reads as something else is written once and
-            // then fails to parse; better to say so than to write it.
-            const parsed = this.services.Tonto.parser.LangiumParser.parse<Model>(content);
-            if (parsed.lexerErrors.length > 0 || parsed.parserErrors.length > 0) {
-                throw new Error(`"${name}" cannot be an ontology's name: the header does not read with it.`);
-            }
             mkdirSync(directory, { recursive: true });
             writeWorkspaceFiles(root, [{ path: relative(root, file), content, createOnly: true }]);
             await this.services.shared.workspace.DocumentBuilder.update([URI.file(file)], []);

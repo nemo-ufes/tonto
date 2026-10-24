@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { collectFiles, TontoSession, workspaceRootOf } from '../api.js';
+import { collectFiles, ontologyNameProblem, TontoSession, workspaceRootOf } from '../api.js';
 import type { NewOntologyResult } from '../api.js';
-import { CLI_HOOK_COMMAND, hasClaudeHook, withClaudeHook } from '../agent-hook.js';
+import { CLI_HOOK_COMMAND, hasClaudeHook, hasEditorClaudeHook, withClaudeHook } from '../agent-hook.js';
 import { defaultOntologyName, instructionsIn, withAgentsImport, withTontoInstructions } from '../onboarding.js';
 
 /**
@@ -47,7 +47,7 @@ export async function initWorkspace(folder: string, options: InitOptions = {}): 
     let ontology: NewOntologyResult | undefined;
     if (options.ontology !== false && (options.ontology !== undefined || collectFiles([root]).length === 0)) {
         const session = new TontoSession({ workspace: workspaceRootOf(root) });
-        ontology = await session.newOntology(options.ontology ?? defaultOntologyName(root), root);
+        ontology = await session.newOntology(options.ontology ?? defaultOntologyName(root, name => !ontologyNameProblem(name)), root);
     }
     const changed: string[] = [];
     const kept: string[] = [];
@@ -65,7 +65,9 @@ export async function initWorkspace(folder: string, options: InitOptions = {}): 
 
     if (hasClaudeHook(settings, CLI_HOOK_COMMAND)) {
         // Ours, and up to date already.
-    } else if (hasClaudeHook(settings)) {
+    } else if (hasEditorClaudeHook(settings)) {
+        // The editor's runs the same checks with its own runtime. An older
+        // command line hook is not kept: it is replaced below.
         kept.push('.claude/settings.json');
     } else {
         write(root, '.claude/settings.json', '', `${JSON.stringify(withClaudeHook(settings, CLI_HOOK_COMMAND), undefined, 2)}\n`);

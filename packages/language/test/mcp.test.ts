@@ -218,8 +218,13 @@ describe('the MCP server', () => {
     }, 30_000);
 
     test('file paths cannot read outside the workspace', async () => {
-        const workspace = mkdtempSync(join(tmpdir(), 'tonto-mcp-paths-'));
-        const outside = `${workspace}-outside.tonto`;
+        // Both in a folder of their own: a model written straight into the
+        // shared temporary directory makes it a workspace, and every other
+        // test's folder there is then discovered as part of it.
+        const parent = mkdtempSync(join(tmpdir(), 'tonto-mcp-paths-'));
+        const workspace = join(parent, 'workspace');
+        mkdirSync(workspace);
+        const outside = join(parent, 'outside.tonto');
         writeFileSync(outside, 'ontology outside\nkind Secret\n');
         const client = await connected(workspace);
         try {

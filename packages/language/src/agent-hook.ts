@@ -90,7 +90,11 @@ export const CLI_HOOK_COMMAND = 'npx --no -- tonto hook';
  * the other, so a folder set up both ways validates each edit once.
  */
 function isTontoHook(command: unknown): boolean {
-    return typeof command === 'string' && (command.includes('tonto-hook') || /\btonto hook\b/.test(command));
+    return isEditorHook(command) || (typeof command === 'string' && /\btonto hook\b/.test(command));
+}
+
+function isEditorHook(command: unknown): boolean {
+    return typeof command === 'string' && command.includes('tonto-hook');
 }
 
 type PostToolUseEntry = { hooks?: Array<{ command?: unknown }> };
@@ -100,6 +104,11 @@ function postToolUse(settings: Record<string, unknown>): PostToolUseEntry[] {
     if (typeof hooks !== 'object' || hooks === null || Array.isArray(hooks)) return [];
     const entries = (hooks as Record<string, unknown>).PostToolUse;
     return Array.isArray(entries) ? entries as PostToolUseEntry[] : [];
+}
+
+/** Whether Claude Code's settings run the editor's hook, whatever its runtime's path. */
+export function hasEditorClaudeHook(settings: Record<string, unknown>): boolean {
+    return postToolUse(settings).some(entry => entry.hooks?.some(hook => isEditorHook(hook.command)));
 }
 
 /** Whether Claude Code's settings already run a tonto hook: this command, or else the editor's or the command line's. */
@@ -116,7 +125,13 @@ export function hasClaudeHook(settings: Record<string, unknown>, command?: strin
 export function withClaudeHook(settings: Record<string, unknown>, command: string): Record<string, unknown> {
     const hooks = typeof settings.hooks === 'object' && settings.hooks !== null && !Array.isArray(settings.hooks)
         ? { ...settings.hooks as Record<string, unknown> } : {};
-    const others = postToolUse(settings).filter(entry => !entry.hooks?.some(hook => isTontoHook(hook.command)));
+    // Only tonto's hook leaves an entry: another hook written beside it in
+    // the same entry is someone else's, and an entry left empty goes.
+    const others = postToolUse(settings).flatMap(entry => {
+        if (!Array.isArray(entry.hooks) || !entry.hooks.some(hook => isTontoHook(hook.command))) return [entry];
+        const rest = entry.hooks.filter(hook => !isTontoHook(hook.command));
+        return rest.length > 0 ? [{ ...entry, hooks: rest }] : [];
+    });
     hooks.PostToolUse = [...others, { matcher: CLAUDE_HOOK_MATCHER, hooks: [{ type: 'command', command, timeout: 60 }] }];
     return { ...settings, hooks };
 }
