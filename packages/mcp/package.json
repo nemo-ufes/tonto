@@ -1,6 +1,6 @@
 {
     "name": "tonto-mcp",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "private": true,
     "description": "Model Context Protocol server for the tonto modeling language: validate, repair, and look up what a rule means.",
     "license": "MIT",
@@ -20,7 +20,7 @@
     },
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.30.0",
-        "tonto-language": "0.9.2",
+        "tonto-language": "0.9.3",
         "zod": "^3.23.8"
     },
     "devDependencies": {

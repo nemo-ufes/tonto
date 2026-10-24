@@ -1,7 +1,7 @@
 {
     "name": "tonto-vscode",
     "displayName": "tonto",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "private": true,
     "description": "tonto: a textual ontology modeling language",
     "license": "MIT",
@@ -776,7 +776,7 @@
         "package": "npm run build && vsce package --no-dependencies --no-rewrite-relative-links -o tonto.vsix && node name-vsix.mjs"
     },
     "dependencies": {
-        "tonto-language": "0.9.2",
+        "tonto-language": "0.9.3",
         "vscode-languageclient": "^10.1.0"
     },
     "devDependencies": {
