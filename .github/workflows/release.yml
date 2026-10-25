@@ -87,7 +87,7 @@ jobs:
             }
             echo "Matching tonto-language@${VERSION} is already published; skipping."
           else
-            npm publish "$TARBALL" --access public --provenance
+            npm publish "./$TARBALL" --access public --provenance
           fi
       - name: Publish extension to the Visual Studio Marketplace
         if: ${{ inputs.publish_marketplace }}
