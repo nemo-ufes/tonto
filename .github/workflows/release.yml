@@ -41,6 +41,10 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
+      - name: Install npm with trusted publishing support
+        run: npm install --global npm@^11.5.1
+      - name: Report npm version
+        run: npm --version
       - name: Verify signed release tag
         env:
           RELEASE_SIGNING_PUBLIC_KEY: ${{ secrets.RELEASE_SIGNING_PUBLIC_KEY }}
