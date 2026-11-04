@@ -377,12 +377,17 @@ parentheses: the flags first, then a name, then what it draws from --
 \`(staff subsets Team.members)\`. The flags are written in the order
 \`const addOnly\`.
 
-\`const\` says the link cannot change once set, and \`addOnly\` -- for an end
-that holds more than one -- says the weaker thing: links may be added and never
-removed, so the collection only grows -- which is what the events constituting
-a process do. That the earlier is a *prefix* of the later is the stronger
-claim the axiom makes, and one an end has no word for: \`ordered\` and
-\`derived\` are attribute flags.
+\`const\` says the links or values cannot change. \`addOnly\` says they can
+only grow: at every later time, everything linked or valued before is still
+there, though more may have been added. For an optional single value or link,
+this allows it to go from absent to present once, but never to be removed or
+replaced. The multiplicity must still hold at every time. A fixed
+multiplicity leaves nothing to add, so \`const\` is the meaningful flag there.
+
+\`addOnly\` does not say that additions come last in an ordered collection. It
+preserves membership; it does not say the earlier sequence is a *prefix* of
+the later one. That stronger claim is what the process axiom makes, and tonto
+has no end modifier for it. \`ordered\` and \`derived\` are attribute flags.
 
 Two things require \`const\`. An end is a property of the classifier at the
 *opposite* end, so an end belonging to an event or an abstract individual

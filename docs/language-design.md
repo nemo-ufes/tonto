@@ -67,9 +67,18 @@ Write `[n]` for exactly `n`, or `[lower..upper]` for a range; `*` is an
 unbounded upper bound, and `[*]` is shorthand for `[0..*]`.
 
 End modifiers sit in parentheses before the name: `(const father)`,
-`(addOnly children)`, `(staff subsets Team.members)`. `const` says a link does
-not change. On a multi-valued end, `addOnly` says links may be added but never
-removed or replaced. Attributes put modifiers before the type:
+`(addOnly children)`, `(staff subsets Team.members)`. `const` says links or
+values do not change. `addOnly` says they can only grow: at every later time,
+all links or values held earlier are still held, though more may have been
+added. This also applies to an optional single link or value, which may go
+from absent to present once but cannot be removed or replaced. Multiplicity
+still has to hold at every time; with a fixed multiplicity, nothing can be
+added and `const` is the meaningful flag.
+
+For an ordered attribute, `addOnly` preserves membership but does not require
+new values to be appended or the earlier sequence to remain a prefix. It
+therefore does not express the stronger prefix condition in the process
+constitution axiom. Attributes put modifiers before the type:
 `nicknames: ordered string [*]`. `const` and `addOnly` are alternatives.
 
 The event and process distinction affects these claims. An event has
