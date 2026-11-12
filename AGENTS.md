@@ -219,6 +219,18 @@ question is about structure -- what a model declares, what it is missing --
 rather than about text. A declaration's `///` documentation comes with it as
 `$documentation`, so what the model *says* is readable there too.
 
+### Diagrams
+
+    tonto-view --help                            # what the installed copy draws
+    npm install -g @nemo-ufes/tonto-visualizer-cli   # if it is not installed
+
+Neither `tonto` nor the MCP tools draw diagrams. For a diagram as an image --
+SVG, PNG, PDF -- look for the separate `tonto-view` command, and read its
+`--help` for the formats and options it offers rather than guessing them. If
+it is not installed, the package above provides it: propose the install and
+run it only with the user's agreement. Do not hand-draw a diagram in its
+place.
+
 ### Over MCP
 
 `packages/mcp` exposes the same things as tools. They are defined once, in

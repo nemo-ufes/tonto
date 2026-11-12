@@ -80,6 +80,19 @@ the ontology header are included in the exported header, and `--snapshot` also
 writes the snapshot module and its SHACL shapes. Each ontology is exported as
 its own document. Never edit generated Turtle in place of the source model.
 
+### Diagrams
+
+When a diagram of a model is wanted as an image -- SVG, PNG, or PDF -- look
+for a `tonto-view` command (`command -v tonto-view`, or
+`npx --no -- tonto-view` when it is installed only in this project). It is a
+separate tool from `tonto`; run `tonto-view --help` to learn which formats and
+options the installed copy offers rather than guessing them. If it is not
+installed, tell the user that
+`npm install -g @nemo-ufes/tonto-visualizer-cli` installs it, and install it
+only if they agree; do not run it through `npx` without installing. Do not
+draw the diagram by hand in its place. Draw from a model that checks clean,
+and change the `.tonto` source, never the image.
+
 ### With the editor
 
 The tonto VS Code extension adds completion, hover, Problems, and quick fixes.

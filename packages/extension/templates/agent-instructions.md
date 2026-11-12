@@ -69,6 +69,18 @@ regenerate Turtle, validate and save the `.tonto` source first, then call
 `tonto_gufo` with saved `paths` and `write` (or a workspace-relative
 `outDir`). Never edit generated Turtle in place of the source model.
 
+### Diagrams
+
+The Tonto MCP tools do not draw diagrams. When a diagram of a model is wanted
+as an image -- SVG, PNG, or PDF -- look for a `tonto-view` command
+(`command -v tonto-view`). It is a separate tool from `tonto`; run
+`tonto-view --help` to learn which formats and options the installed copy
+offers rather than guessing them. If it is not installed, tell the user that
+`npm install -g @nemo-ufes/tonto-visualizer-cli` installs it, and install it
+only if they agree; do not run it through `npx` without installing. Do not
+draw the diagram by hand in its place. Draw from a model that validates, and
+change the `.tonto` source, never the image.
+
 ### Look up instead of experimenting
 
 Use `tonto_explain` to ask whether a stereotype can specialize another, or
