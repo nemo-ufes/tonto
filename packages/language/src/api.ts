@@ -373,7 +373,6 @@ export class TontoSession {
 
     private readonly services: ReturnType<typeof createTontoServices>;
     private ready: Promise<void> | undefined;
-    private scratch = 0;
 
     constructor(private readonly options: SessionOptions = {}) {
         // Always the real one. This file reads and writes files itself, so
@@ -556,8 +555,48 @@ export class TontoSession {
             : [this.options.workspace].flat().map(folder => canonicalPath(folder));
     }
 
+    /**
+     * A path in the spelling the workspace was configured under. A folder
+     * reached through a link has two spellings, and a caller may give the
+     * workspace in one and a file in the other -- the MCP server resolves the
+     * files it is given and not its workspace. Read as two paths, the file
+     * was loaded a second time beside itself, and a model with nothing wrong
+     * with it was answered with an "ontology-name-clash" against itself.
+     */
+    private spelled(path: string): string {
+        const folders = this.folders();
+        if (folders.some(folder => path === folder || path.startsWith(`${folder}${sep}`))) return path;
+        const real = canonicalRealPath(path);
+        for (const folder of folders) {
+            const fromRoot = relative(canonicalRealPath(folder), real);
+            if (fromRoot !== '..' && !fromRoot.startsWith(`..${sep}`) && !isAbsolute(fromRoot)) return join(folder, fromRoot);
+        }
+        return path;
+    }
+
+    /** The `.tonto` files under the paths a caller named, as the workspace spells them. */
+    private collect(paths: string[]): string[] {
+        return [...new Set(collectFiles(paths).map(path => this.spelled(path)))].sort();
+    }
+
+    /**
+     * Where a draft stands while it is asked about: in the workspace's root,
+     * so its relative locations resolve as a file's there would, under a name
+     * nothing else has. The plain name first, and the same one each time: a
+     * repair is taken by the title validation gave it, and a title quoting a
+     * name that counted the calls -- `Write "ontology draft_54" above the
+     * package` -- could never be named again. A file of the workspace that
+     * really is `draft.tonto` moves the draft aside rather than failing the
+     * call on a document already present.
+     */
     private draftUri(name: string): URI {
-        return URI.file(resolve(this.folders()[0] ?? '/', `${name}-${++this.scratch}.tonto`));
+        const store = this.services.shared.workspace.LangiumDocuments;
+        const root = this.folders()[0] ?? '/';
+        for (let suffix = 1; ; suffix++) {
+            const path = resolve(root, `${name}${suffix === 1 ? '' : `-${suffix}`}.tonto`);
+            const uri = URI.file(path);
+            if (!store.hasDocument(uri) && !existsSync(path)) return uri;
+        }
     }
 
     /**
@@ -657,7 +696,7 @@ export class TontoSession {
     async splitOntologyFile(path: string): Promise<SplitOntologyResult> {
         return this.oneAtATime(async () => {
             await this.open();
-            const file = canonicalPath(path);
+            const file = this.spelled(canonicalPath(path));
             const root = this.folders().find(folder => {
                 const fromRoot = relative(folder, file);
                 return fromRoot === '' || (fromRoot !== '..' && !fromRoot.startsWith(`..${sep}`) && !isAbsolute(fromRoot));
@@ -823,7 +862,7 @@ export class TontoSession {
     async substitutedImports(paths: string[]): Promise<string[]> {
         return this.oneAtATime(async () => {
             await this.open();
-            const wanted = new Set(collectFiles(paths));
+            const wanted = new Set(this.collect(paths));
             await this.syncWorkspace(wanted);
             const primary = this.documents(wanted);
             await this.services.shared.workspace.DocumentBuilder.build(primary, { validation: false });
@@ -836,7 +875,7 @@ export class TontoSession {
     async fetch(paths: string[], options: { refresh?: boolean } = {}): Promise<FetchResult> {
         return this.oneAtATime(async () => {
             await this.open();
-            return publicationWorkspace(this.services.shared).fetch(collectFiles(paths), options.refresh);
+            return publicationWorkspace(this.services.shared).fetch(this.collect(paths), options.refresh);
         });
     }
 
@@ -863,7 +902,7 @@ export class TontoSession {
     async gufoFiles(paths: string[], options: GufoOptions = {}): Promise<GufoResult> {
         return this.oneAtATime(async () => {
             await this.open();
-            const wanted = new Set(collectFiles(paths));
+            const wanted = new Set(this.collect(paths));
             await this.syncWorkspace(wanted);
             const primary = this.documents(wanted);
             const documents = this.generationDocuments(primary);
@@ -935,7 +974,7 @@ export class TontoSession {
 
     private async readFiles(paths: string[]): Promise<Reported[]> {
         await this.open();
-        const wanted = new Set(collectFiles(paths));
+        const wanted = new Set(this.collect(paths));
         await this.syncWorkspace(wanted);
         const documents = this.documents(wanted);
         await this.services.shared.workspace.DocumentBuilder.build(documents, { validation: true });
@@ -1083,7 +1122,7 @@ export class TontoSession {
 
     private async repairFiles(paths: string[], only?: ReadonlySet<string>): Promise<string[]> {
         await this.open();
-        const wanted = new Set(collectFiles(paths));
+        const wanted = new Set(this.collect(paths));
         const applied: string[] = [];
         for (let round = 0; round < 20; round++) {
             await this.syncWorkspace(wanted);

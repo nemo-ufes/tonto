@@ -360,6 +360,11 @@ export class PublicationWorkspace {
         try {
             const { requested, mapped } = this.resolveLocation(location, from);
             const uri = URI.parse(mapped);
+            // The document's own spelling of its URI, which is what every
+            // lookup has in hand: a URI writes "+", "?", "=" and "@" as their
+            // codes, so a location holding one was remembered under a string
+            // no document's URI matched, and its redirect was never found.
+            const key = uri.toString();
             const existing = this.services.workspace.LangiumDocuments.getDocument(uri)
                 ?? (uri.scheme === 'file' ? this.services.workspace.LangiumDocuments.all.find(doc => {
                     if (doc.uri.scheme !== 'file') return false;
@@ -385,15 +390,15 @@ export class PublicationWorkspace {
                 }
                 if (hash(entry.source) !== entry.sha256) throw new Error(`Cached document <${requested}> failed its SHA-256 check. Run tonto fetch --refresh.`);
                 source = entry.source;
-                this.effective.set(mapped, entry.effective);
+                this.effective.set(key, entry.effective);
             } else {
                 throw new Error(`Unsupported mapped location <${mapped}>.`);
             }
             const document = this.services.workspace.LangiumDocumentFactory.fromString<Model>(source, uri);
             this.services.workspace.LangiumDocuments.addDocument(document);
-            this.loaded.set(mapped, document);
+            this.loaded.set(key, document);
             const root = this.rootOf(from);
-            if (root) this.origins.set(mapped, root);
+            if (root) this.origins.set(key, root);
             return document;
         } catch (error) {
             const message = String(error instanceof Error ? error.message : error);
@@ -412,7 +417,7 @@ export class PublicationWorkspace {
             let source: string | undefined;
             let redirectChanged = false;
             try {
-                const cached = Object.values(this.snapshotOf(this.origins.get(uri)).entries).find(entry => entry.mapped === uri);
+                const cached = Object.values(this.snapshotOf(this.origins.get(uri)).entries).find(entry => URI.parse(entry.mapped).toString() === uri);
                 // Identical text at a new redirect destination can resolve
                 // every relative import and bundle to a different document.
                 redirectChanged = document.uri.scheme !== 'file' && cached?.effective !== this.effective.get(uri);

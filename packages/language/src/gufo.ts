@@ -788,10 +788,10 @@ function writeFiles(
     /** `sales.ttl` to `sales.<layer>.ttl`, kept unique. */
     function beside(coreFile: string, layer: string): string {
         let file = coreFile.replace(/\.ttl$/, `.${layer}.ttl`);
-        for (let counter = 2; names.has(file); counter++) {
+        for (let counter = 2; names.has(file.toLowerCase()); counter++) {
             file = coreFile.replace(/\.ttl$/, `.${layer}-${counter}.ttl`);
         }
-        names.add(file);
+        names.add(file.toLowerCase());
         return file;
     }
 }
@@ -882,11 +882,14 @@ function fileNameFor(group: OntologyGroup, taken: Set<string>): string {
         stem = url.pathname.split('/').filter(Boolean).pop() ?? url.host;
     }
     stem = decodeURIComponentSafely(stem).replace(/[^\p{L}\p{N}._-]+/gu, '_') || 'ontology';
+    // Compared without case: "Shop.ttl" and "shop.ttl" are one file on the
+    // file systems of macOS and Windows, where the second replaced the first
+    // and the export reported both as written.
     let name = `${stem}.ttl`;
-    for (let counter = 2; taken.has(name); counter++) {
+    for (let counter = 2; taken.has(name.toLowerCase()); counter++) {
         name = `${stem}-${counter}.ttl`;
     }
-    taken.add(name);
+    taken.add(name.toLowerCase());
     return name;
 }
 

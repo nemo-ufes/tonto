@@ -439,10 +439,35 @@ export class TontoCodeActionProvider implements CodeActionProvider {
     }
 
     private writableActions(actions: CodeAction[]): CodeAction[] {
-        return actions.filter(action => Object.keys(action.edit?.changes ?? {}).every(uri => {
+        const writable = actions.filter(action => Object.keys(action.edit?.changes ?? {}).every(uri => {
             const target = this.documents.getDocument(URI.parse(uri));
             return !target || !publicationWorkspace(this.services.shared).isReadOnly(target);
         }));
+        writable.forEach(action => this.inLineEndingsOf(action));
+        return writable;
+    }
+
+    /**
+     * Every edit written with the line endings of the file it goes into.
+     *
+     * The repairs write "\n", and into a file that ends its lines "\r\n" that
+     * left one line ending unlike the rest -- a mixed file, which is a diff on
+     * every line for whoever's editor then normalizes it. Done here, once, for
+     * every repair there is and every one added later, rather than asked of
+     * each where it builds its text.
+     */
+    private inLineEndingsOf(action: CodeAction): void {
+        const convert = (uri: string, edits: readonly object[]): void => {
+            const target = this.documents.getDocument(URI.parse(uri));
+            if (!target?.textDocument.getText().includes('\r\n')) return;
+            for (const edit of edits as Array<{ newText?: unknown }>) {
+                if (typeof edit.newText === 'string') edit.newText = edit.newText.replace(/\r?\n/g, '\r\n');
+            }
+        };
+        for (const [uri, edits] of Object.entries(action.edit?.changes ?? {})) convert(uri, edits);
+        for (const change of action.edit?.documentChanges ?? []) {
+            if ('textDocument' in change) convert(change.textDocument.uri, change.edits);
+        }
     }
 
     /**
