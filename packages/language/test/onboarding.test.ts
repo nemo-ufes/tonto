@@ -8,7 +8,7 @@ import { run } from '../src/cli/index.js';
 import { cliInstructions } from '../src/cli/init.js';
 import {
     CLI_INSTRUCTIONS_START, EDITOR_INSTRUCTIONS_START, INSTRUCTIONS_END, defaultOntologyName, instructionsIn, starterOntology,
-    withAgentsImport, withTontoInstructions
+    validPackageName, withAgentsImport, withTontoInstructions
 } from '../src/onboarding.js';
 import { canonicalPath } from '../src/utils/paths.js';
 
@@ -50,6 +50,7 @@ describe('what starting a workspace writes', () => {
         expect(defaultOntologyName('/models/Ação')).toBe('acao');
         expect(defaultOntologyName('/models/2026')).toBe('model_2026');
         expect(defaultOntologyName('/models/---')).toBe('model');
+        expect(defaultOntologyName('/models/car--rentals-')).toBe('car-rentals');
         // A keyword has the shape of a name, and a header written with it does not parse.
         const reads = (name: string): boolean => !ontologyNameProblem(name);
         expect(defaultOntologyName('/models/Ontology', reads)).toBe('model_ontology');
@@ -58,6 +59,14 @@ describe('what starting a workspace writes', () => {
         expect(ontologyNameProblem('event')).toMatch(/cannot be an ontology's name/);
         expect(ontologyNameProblem('Shop')).toMatch(/not an ontology name/);
         expect(ontologyNameProblem('in')).toBeUndefined();
+    });
+
+    test('a hyphen joins the words of a name, and only between two of them', () => {
+        expect(ontologyNameProblem('car-rental')).toBeUndefined();
+        expect(ontologyNameProblem('kind-of')).toBeUndefined();
+        for (const name of ['car--rental', 'car-', '-car', 'Car-rental']) expect(ontologyNameProblem(name)).toMatch(/not an ontology name/);
+        for (const name of ['fleet-ops', 'billing.late-fees', 'car-rental.fleet_ops']) expect(validPackageName(name)).toBe(true);
+        for (const name of ['fleet--ops', 'fleet-.ops', 'billing.-fees', 'fleet-']) expect(validPackageName(name)).toBe(false);
     });
 
     test('instructions added once, brought up to date in place, and the editor\'s preferred to the command line\'s', () => {
@@ -110,6 +119,9 @@ describe('a new ontology, and a package of it, written to disk', () => {
         const billing = await session.newPackage('billing', { ontology: 'shop', folder: join(workspace, 'finance', 'billing') });
         expect(billing.split).toBeUndefined();
         expect(readFileSync(shop.file, 'utf8')).toContain('    billing from <finance/billing/billing.tonto>');
+        const fees = await session.newPackage('billing.late-fees', { ontology: 'shop' });
+        expect(readFileSync(fees.packageFile, 'utf8')).toBe('package billing.late-fees in shop\n\n');
+        expect(readFileSync(shop.file, 'utf8')).toContain('    billing.late-fees from <late-fees.tonto>');
 
         const later = await session.newOntology('pricing', join(workspace, 'pricing'));
         expect(later.sample).toBe(false);

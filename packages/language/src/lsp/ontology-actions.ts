@@ -7,6 +7,7 @@ import { CodeActionKind } from 'vscode-languageserver';
 import type { Model, Ontology, OntologyBody, Package } from '../generated/ast.js';
 import { isBundleEntry, isImport, isOntology, isOntologyBody, isPackage } from '../generated/ast.js';
 import { docLinesAbove } from '../documentation/doc-comment.js';
+import { PACKAGE_NAME_HINT, validPackageName } from '../names.js';
 import { bundleTargets, ownerOf, relativeBundleLocation } from '../publication/workspace.js';
 import type { OntologyUnit, PublicationWorkspace } from '../publication/workspace.js';
 
@@ -406,8 +407,6 @@ export function authoredOntologies(workspace: PublicationWorkspace): AuthoredOnt
         .sort((one, two) => one.name < two.name ? -1 : one.name > two.name ? 1 : 0);
 }
 
-const PACKAGE_NAME = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/;
-
 /**
  * What adding a package to an ontology writes: a package file, `sales.tonto`
  * in `folder`, starting `package sales in shop`, and its bundle entry in the
@@ -424,7 +423,7 @@ export function newPackageEdit(
     const ontology = (document.parseResult.value as Model).ontologies[0];
     const unit = workspace.units.find(candidate => candidate.declaration === ontology);
     if (!ontology?.$cstNode || !unit || document.uri.scheme !== 'file') return { problem: 'This file declares no ontology a package can be added to.' };
-    if (!PACKAGE_NAME.test(name)) return { problem: `"${name}" is not a package name: write lower-case words, joined by "." if it has several parts, such as "sales" or "commerce.sales".` };
+    if (!validPackageName(name)) return { problem: `"${name}" is not a package name. ${PACKAGE_NAME_HINT}` };
     if (unit.packages.some(pkg => pkg.name === name)) return { problem: `Ontology "${ontology.name}" already has a package "${name}".` };
     const path = join(folder, `${name.split('.').at(-1)}.tonto`);
     if (existsSync(path) || open(URI.file(path))) return { problem: `${relative(dirname(document.uri.fsPath), path).split(sep).join('/')} already exists.` };

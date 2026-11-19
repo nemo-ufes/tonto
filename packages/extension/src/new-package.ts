@@ -3,6 +3,7 @@ import type { ExtensionContext, Uri } from 'vscode';
 import * as vscode from 'vscode';
 import type { LanguageClient } from 'vscode-languageclient/node';
 import type { WorkspaceEdit } from 'vscode-languageclient/node';
+import { PACKAGE_NAME_HINT, validPackageName } from 'tonto-language/onboarding';
 
 /** An ontology a package can be added to, as the language server lists it. */
 interface AuthoredOntology {
@@ -48,8 +49,7 @@ async function newPackage(client: LanguageClient | undefined, resource?: Uri): P
         title: `New package in ontology "${ontology.name}"`,
         prompt: 'Name of the package',
         ignoreFocusOut: true,
-        validateInput: value => /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/.test(value)
-            ? undefined : 'Use lower-case words, joined by "." if it has several parts, for example "sales" or "commerce.sales".'
+        validateInput: value => validPackageName(value) ? undefined : PACKAGE_NAME_HINT
     });
     if (!name) return;
 

@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+import { validOntologyName } from './names.js';
 
 /**
  * Starting a tonto workspace, in the words every host uses for it.
@@ -12,19 +13,13 @@ import { basename } from 'node:path';
  * so the extension can bundle it.
  */
 
-/** An ontology's name: one identifier, entirely lowercase. */
-const ONTOLOGY_NAME = /^[a-z][a-z0-9_]*$/;
-
-export function validOntologyName(value: string): boolean {
-    return ONTOLOGY_NAME.test(value);
-}
-
-export const ONTOLOGY_NAME_HINT = 'Use one lower-case name, for example "sales" or "university".';
+export { ONTOLOGY_NAME_HINT, PACKAGE_NAME_HINT, validOntologyName, validPackageName } from './names.js';
 
 /**
  * The name a folder suggests for its first ontology: `Car Rentals` gives
- * `car_rentals`. A name that will not do is prefixed, as `2026` gives
- * `model_2026`; `admissible` says which will, and a host with a parser passes
+ * `car_rentals`, and `car-rentals` keeps its hyphen. A name that will not do
+ * is prefixed, as `2026` gives `model_2026`; `admissible` says which will,
+ * and a host with a parser passes
  * one that also refuses keywords, since a folder named `ontology` or `event`
  * would otherwise suggest a header that does not parse.
  */
@@ -33,8 +28,9 @@ export function defaultOntologyName(folder: string, admissible: (name: string) =
         .normalize('NFKD')
         .replace(/[̀-ͯ]/g, '')
         .toLowerCase()
-        .replace(/[^a-z0-9_]+/g, '_')
-        .replace(/^_+|_+$/g, '');
+        .replace(/[^a-z0-9_-]+/g, '_')
+        .replace(/-{2,}/g, '-')
+        .replace(/^[_-]+|[_-]+$/g, '');
     if (!normalized) return 'model';
     return /^[a-z]/.test(normalized) && admissible(normalized) ? normalized : `model_${normalized}`;
 }
