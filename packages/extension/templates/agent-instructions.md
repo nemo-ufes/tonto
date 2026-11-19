@@ -72,7 +72,7 @@ regenerate Turtle, validate and save the `.tonto` source first, then call
 ### Diagrams
 
 The Tonto MCP tools do not draw diagrams. When a diagram of a model is wanted
-as an image -- SVG, PNG, or PDF -- look for a `tonto-view` command
+as an image -- SVG -- look for a `tonto-view` command
 (`command -v tonto-view`). It is a separate tool from `tonto`; run
 `tonto-view --help` to learn which formats and options the installed copy
 offers rather than guessing them. If it is not installed, tell the user that

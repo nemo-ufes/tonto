@@ -82,7 +82,7 @@ its own document. Never edit generated Turtle in place of the source model.
 
 ### Diagrams
 
-When a diagram of a model is wanted as an image -- SVG, PNG, or PDF -- look
+When a diagram of a model is wanted as an image -- SVG -- look
 for a `tonto-view` command (`command -v tonto-view`, or
 `npx --no -- tonto-view` when it is installed only in this project). It is a
 separate tool from `tonto`; run `tonto-view --help` to learn which formats and
